@@ -27,7 +27,7 @@ It is recommended to create a new project in **STM32CubeIDE** using the download
 ### How to Download the Repo ⬇️
 Clone the repository in your terminal using:
    ```bash
-   git clone https://github.com/dylangeorg3/MTRX2700-Assignment-2.git
+   git clone https://github.com/samrogerrs/MTRX2700-Assignment-2.git
    ```
 Note that the repository is not publically available, for reasons pertaining to academic integrity.
 ## Module Overview 📂
