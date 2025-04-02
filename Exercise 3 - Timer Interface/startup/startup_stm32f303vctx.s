@@ -12,7 +12,7 @@
  ******************************************************************************
  * @attention
  *
- * Copyright (c) ${year} STMicroelectronics.
+ * Copyright (c) 2025 STMicroelectronics.
  * All rights reserved.
  *
  * This software is licensed under terms that can be found in the LICENSE file
@@ -97,7 +97,7 @@ LoopFillZerobss:
   bl main
 
 LoopForever:
-    b LoopForever
+  b LoopForever
 
   .size Reset_Handler, .-Reset_Handler
 
@@ -124,7 +124,6 @@ Infinite_Loop:
 ******************************************************************************/
   .section .isr_vector,"a",%progbits
   .type g_pfnVectors, %object
-  .size g_pfnVectors, .-g_pfnVectors
 
 g_pfnVectors:
   .word _estack
@@ -224,10 +223,11 @@ g_pfnVectors:
   .word	TIM20_UP_IRQHandler          			/* TIM20 Upgrade interrupt                                                            */
   .word	TIM20_TRG_COM_IRQHandler     			/* TIM20 Trigger and Commutation interrupt                                            */
   .word	TIM20_CC_IRQHandler          			/* TIM20 Capture Compare interrupt                                                    */
-  .word	FPU_IRQHandler               			/* Floating point interrupt                                                           */
+  .word	0                            			/* Reserved                                                                           */
   .word	0                            			/* Reserved                                                                           */
   .word	0                            			/* Reserved                                                                           */
   .word	SPI4_IRQHandler              			/* SPI4 Global interrupt                                                              */
+  .size g_pfnVectors, .-g_pfnVectors
 
 /*******************************************************************************
 *
@@ -479,9 +479,6 @@ g_pfnVectors:
 
 	.weak	TIM20_CC_IRQHandler
 	.thumb_set TIM20_CC_IRQHandler,Default_Handler
-
-	.weak	FPU_IRQHandler
-	.thumb_set FPU_IRQHandler,Default_Handler
 
 	.weak	SPI4_IRQHandler
 	.thumb_set SPI4_IRQHandler,Default_Handler
