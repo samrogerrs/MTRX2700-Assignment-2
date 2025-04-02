@@ -14,7 +14,9 @@
 - N/A
   
 ## Current Items:
-- N/A
+- Sam doing task 1
+- Penelope doing task 2
+- Connor doing task 3
   
 ---
 
@@ -31,7 +33,7 @@
 - Everyone introduced ourselves and added eachother to this repository
 
 ### 2. Team Name
-- After some deliberation the team name was decided to be "X"
+- After some deliberation the team name was decided to be "Group 3"
 
 ### 3. Lab Work
 - The group completed labwork together and completed the tasks from Canvas
@@ -40,7 +42,9 @@
 ---
 
 ## New Items:
-- N/A
+- Setup GitHub
+- Assigned Tasks
+- Began working on modules
 
   
 ---
