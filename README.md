@@ -1,11 +1,11 @@
 
 # MTRX2700-Assignment-2 🤖
-## Group Number - NAME
+## Group Number 3 - NAME
 
 ### **Authors ✍️:**  
 - **Connor Stock**: 520466054  
 - **Sam Rogers**: 540723526  
-- **NAME**: SID 
+- **Penelope Brown**: 530506519 
 - **NAME**: SID 
 
 ## Roles and Responsibilities 👷‍♂️
