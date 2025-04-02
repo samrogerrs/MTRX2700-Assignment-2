@@ -3,7 +3,7 @@
 ## Group Number - NAME
 
 ### **Authors ✍️:**  
-- **NAME**: SID  
+- **Connor Stock**: 520466054  
 - **Sam Rogers**: 540723526  
 - **NAME**: SID 
 - **NAME**: SID 
