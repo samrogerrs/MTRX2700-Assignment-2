@@ -4,7 +4,7 @@
 - **Date:** 02/04/2025
 - **Time:** 3:13pm
 - **Location:** MTRX Lab
-- **Attendees:** Sam, name, name
+- **Attendees:** Sam, Penelope, Connor
 - **Absent:** N/A
 - **Minute Taker:** Sam
 
