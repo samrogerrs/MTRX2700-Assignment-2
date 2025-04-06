@@ -2,9 +2,17 @@
 
 #include "stm32f303xc.h"
 
-uint8_t rx_buffer[RX_BUFFER_SIZE];
-uint8_t tx_buffer[TX_BUFFER_SIZE];
 
+//transmitting buffer
+volatile uint8_t tx_buffer[TX_BUFFER_SIZE];
+
+//Receiving buffers for double buffer interrupt function
+volatile uint8_t buffer1[RX_BUFFER_SIZE];
+volatile uint8_t buffer2[RX_BUFFER_SIZE];
+
+// Variables to switch buffers in double buffer implementation
+volatile uint8_t *active_buffer = buffer1;
+volatile uint8_t *processing_buffer = buffer2;
 
 
 
@@ -23,9 +31,6 @@ struct _SerialPort {
 	volatile uint32_t SerialPinAlternatePinValueHigh;
 	void (*completion_function)(uint32_t, char *);
 };
-
-
-
 
 
 // instantiate the serial port parameters
@@ -114,9 +119,13 @@ void finished_transmission(uint32_t bytes_sent, char *sent_string) {
 
 void finished_receiving(uint8_t num_characters, char *received_string){
 
+	//Parse data here!
+
+
 	volatile uint32_t test = 0;
-	for (volatile uint32_t i = 0; i < 0x8ffff; i++){
-		//delay
+	// make a very simple delay
+	for (volatile uint32_t i = 0; i < 0x8ffff; i++) {
+		// waste time !
 	}
 }
 
@@ -152,19 +161,36 @@ void USART1_EXTI25_IRQHandler(void){
 	}*/
 
 	if (USART1_PORT.UART->ISR & USART_ISR_RXNE){
+
 		static uint8_t rx_index = 0;
 		char received_byte = USART1_PORT.UART->RDR;
 
+		// Store byte into active buffer if not filled
 		if(rx_index < RX_BUFFER_SIZE -1){
-			rx_buffer[rx_index] = received_byte;
+			active_buffer[rx_index] = received_byte;
 			rx_index++;
 		}
+		else{
+			//Wrap around buffer, overwriting data but avoiding polling
+			//situation created by entering completion function here
+			//Data overwritten anyway if completion called - too long
+			rx_index = 0;
+		}
 
+		// Check if terminating character is received
 		if(received_byte == '!'){
+
 			uint8_t length = rx_index;
 			rx_index = 0;
-			USART1_PORT.completion_function(length, rx_buffer);
+
+			USART1_PORT.completion_function(length, active_buffer);
+
+			volatile uint8_t * temp = active_buffer;
+			active_buffer = processing_buffer;
+			processing_buffer = temp;
+
 		}
+
 	}
 
 	if (USART1_PORT.UART->ISR & USART_ISR_TXE){
@@ -242,5 +268,6 @@ void SerialInputString(uint8_t buffer_size, SerialPort *serial_port, char *buffe
 	buffer[buffer_counter] = '!';
 	serial_port->completion_function(buffer_counter, buffer);
 }
+
 
 
