@@ -15,7 +15,9 @@ typedef struct _SerialPort SerialPort;
 extern SerialPort USART1_PORT;
 
 #define RX_BUFFER_SIZE 64
+#define TX_BUFFER_SIZE 64
 extern uint8_t rx_buffer[RX_BUFFER_SIZE];
+extern uint8_t tx_buffer[TX_BUFFER_SIZE];
 
 
 
@@ -41,6 +43,11 @@ void USART1_EXTI25_IRQHandler(void);
 
 // Enable_USART_interrupt - configures interrupt over USART1
 void enable_USART_interrupt();
+
+//start_interrupt_transmission - sends first byte over to load data into TDR
+//Triggers transmission interrupt by raising TDR flag
+//Takes in string to transmit and its size as well as UART channel
+void start_interrupt_tranmission(SerialPort *serial_port, uint8_t *data, uint8_t size);
 
 // finished_transmission - callback function to access length of string and buffer of stored string
 void finished_transmission(uint32_t bytes_sent, char *sent_string);
@@ -68,3 +75,4 @@ void SerialInputString(uint8_t buffer_size, SerialPort *serial_port, char *buffe
  
  
 #endif
+
