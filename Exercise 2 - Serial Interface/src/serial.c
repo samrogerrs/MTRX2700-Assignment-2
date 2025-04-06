@@ -3,6 +3,7 @@
 #include "stm32f303xc.h"
 
 uint8_t rx_buffer[RX_BUFFER_SIZE];
+uint8_t tx_buffer[TX_BUFFER_SIZE];
 
 
 
@@ -150,7 +151,6 @@ void USART1_EXTI25_IRQHandler(void){
 	    USART1->ICR |= USART_ICR_NCF; // Clear noise error flag
 	}*/
 
-
 	if (USART1_PORT.UART->ISR & USART_ISR_RXNE){
 		static uint8_t rx_index = 0;
 		char received_byte = USART1_PORT.UART->RDR;
@@ -166,6 +166,25 @@ void USART1_EXTI25_IRQHandler(void){
 			USART1_PORT.completion_function(length, rx_buffer);
 		}
 	}
+
+	if (USART1_PORT.UART->ISR & USART_ISR_TXE){
+		static uint8_t tx_index = 1;
+
+		if(tx_index < TX_BUFFER_SIZE){
+			USART1_PORT.UART->TDR = tx_buffer[tx_index];
+			if(tx_buffer[tx_index] == '!'){
+				tx_index = 0;
+				USART1->CR1 &= ~USART_CR1_TXEIE;
+			}
+			else{
+				tx_index++;
+			}
+		}
+		else{
+			tx_index = 0; //in case terminating character is never sent OR buffer overflow
+		}
+	}
+
 }
 
 
@@ -189,6 +208,13 @@ void enable_USART_interrupt() {
 
 	// Re-enable all interrupts (now that we are finished)
 	__enable_irq();
+}
+
+void start_interrupt_tranmission(SerialPort *serial_port, uint8_t *data, uint8_t size){
+	memcpy(tx_buffer, data, size);
+	serial_port->UART->TDR = tx_buffer[0];
+	//enable transmission interrupt
+	USART1->CR1 |= USART_CR1_TXEIE;
 }
 
 
@@ -216,4 +242,5 @@ void SerialInputString(uint8_t buffer_size, SerialPort *serial_port, char *buffe
 	buffer[buffer_counter] = '!';
 	serial_port->completion_function(buffer_counter, buffer);
 }
+
 
