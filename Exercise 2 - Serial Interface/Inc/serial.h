@@ -14,10 +14,15 @@ typedef struct _SerialPort SerialPort;
 //   they are fixed, unique values)
 extern SerialPort USART1_PORT;
 
+//Ability of user to change buffer size
 #define RX_BUFFER_SIZE 64
 #define TX_BUFFER_SIZE 64
-extern uint8_t rx_buffer[RX_BUFFER_SIZE];
-extern uint8_t tx_buffer[TX_BUFFER_SIZE];
+
+//Ability of user to modify buffers in main
+extern volatile uint8_t tx_buffer[TX_BUFFER_SIZE];
+extern volatile uint8_t buffer1[RX_BUFFER_SIZE];
+extern volatile uint8_t buffer2[RX_BUFFER_SIZE];
+
 
 
 
