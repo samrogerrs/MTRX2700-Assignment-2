@@ -6,7 +6,6 @@
 - **Connor Stock**: 520466054  
 - **Sam Rogers**: 540723526  
 - **Penelope Brown**: 530506519 
-- **NAME**: SID 
 
 ## Roles and Responsibilities 👷‍♂️
 
