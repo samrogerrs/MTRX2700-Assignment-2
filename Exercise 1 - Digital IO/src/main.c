@@ -1,39 +1,42 @@
-/**
- * @file : main.c
- * @brief : Main program body using io_module (Version 3)
- ******************************************************************************
- */
+/*
+* main.c
+* main program that controls leds with button input
+* uses the dio module for handling leds with rate limiting
+*/
 
 #include <stdint.h>
 #include "stm32f303xc.h"
-#include "io_module.h"
+#include "dio.h"
 
-// Custom button handler function
-void custom_button_handler(void) {
-    // Get the current LED state
-    uint8_t current_state = io_get_led_state();
+// handles what happens when button pressed
+void button_pressed(void)
+{
+    uint8_t current_state = dio_get_led_state();
 
-    // Example of more complex LED behavior:
-    // If we're at an odd-numbered LED, do a standard chase
-    if (current_state & 0x55) {
-        io_chase_led();
-    }
-    // If we're at an even-numbered LED, toggle the pattern between even and odd LEDs
-    else {
-        io_set_led_state(current_state ^ 0xFF);
+    // check which state is currently active
+    if ((current_state & 0xF0) == 0xF0) {
+        // switch to state 1
+        dio_set_led_state(0x0F);
+    } else {
+        // switch to state 2
+        dio_set_led_state(0xF0);
     }
 }
 
-int main(void) {
-    // Initialize the IO module with the button callback
-    io_init(&custom_button_handler);
 
-    // Set initial LED pattern (turn on LED 8)
-    io_turn_on_led(0);
+int main(void)
+{
+    // set up and assign button pressed function
+    dio_init(&button_pressed);
 
-    // Enable the button interrupt
-    io_enable_button_interrupt();
+    // set first state
+    dio_set_led_state(0x0F);
 
-    /* Loop forever */
-    for(;;) {}
+    // set change rate (2000ms)
+    dio_set_led_rate(2000);
+
+    //loop 4ever
+    for(;;) {
+        // interrupts mean we dont need anything in the loop
+    }
 }
