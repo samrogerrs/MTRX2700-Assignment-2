@@ -117,6 +117,13 @@ void finished_transmission(uint32_t bytes_sent, char *sent_string) {
 	}
 }
 
+void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_t size){
+	memcpy(tx_buffer, data, size);
+	serial_port->UART->TDR = tx_buffer[0];
+	//enable transmission interrupt
+	USART1->CR1 |= USART_CR1_TXEIE;
+}
+
 void finished_receiving(uint8_t num_characters, char *received_string){
 
 	int init_byte = received_string[0];
@@ -137,7 +144,7 @@ void finished_receiving(uint8_t num_characters, char *received_string){
 		break;
 	default:
 		uint8_t *error_message = "Invalid string entered. Please try again!\r";
-		start_interrupt_tranmission(&USART1_PORT, error_message, strlen(error_message));
+		start_interrupt_transmission(&USART1_PORT, error_message, strlen(error_message));
 		break;
 	}
 
@@ -257,12 +264,6 @@ void enable_USART_interrupt() {
 	__enable_irq();
 }
 
-void start_interrupt_tranmission(SerialPort *serial_port, uint8_t *data, uint8_t size){
-	memcpy(tx_buffer, data, size);
-	serial_port->UART->TDR = tx_buffer[0];
-	//enable transmission interrupt
-	USART1->CR1 |= USART_CR1_TXEIE;
-}
 
 
 void SerialInputChar(uint8_t *data, SerialPort *serial_port){
