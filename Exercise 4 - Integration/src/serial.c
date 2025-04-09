@@ -123,7 +123,8 @@ void finished_receiving(uint8_t num_characters, char *received_string){
 
 	switch(init_byte){
 	case(init_byte == 's'):
-
+		received_string += 7;
+		start_interrupt_transmission(&USART1_PORT, received_string, strlen(received_string));
 		break;
 	case(init_byte == 'l'):
 
