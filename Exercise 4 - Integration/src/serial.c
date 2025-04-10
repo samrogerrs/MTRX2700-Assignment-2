@@ -5,6 +5,8 @@
 
 //transmitting buffer
 volatile uint8_t tx_buffer[TX_BUFFER_SIZE];
+volatile uint8_t tx_index = 0;
+volatile uint8_t tx_length = 0;
 
 //Receiving buffers for double buffer interrupt function
 volatile uint8_t buffer1[RX_BUFFER_SIZE];
@@ -13,6 +15,9 @@ volatile uint8_t buffer2[RX_BUFFER_SIZE];
 // Variables to switch buffers in double buffer implementation
 volatile uint8_t *active_buffer = buffer1;
 volatile uint8_t *processing_buffer = buffer2;
+
+volatile uint8_t processing_flag = 1;
+volatile uint8_t transmitting = 0;
 
 
 
@@ -36,16 +41,16 @@ struct _SerialPort {
 // instantiate the serial port parameters
 //   note: the complexity is hidden in the c file
 SerialPort USART1_PORT = {USART1,
-		GPIOC,
-		RCC_APB2ENR_USART1EN, // bit to enable for APB2 bus
-		0x00,	// bit to enable for APB1 bus
-		RCC_AHBENR_GPIOCEN, // bit to enable for AHB bus
-		0xA00,
-		0xF00,
-		0x770000,  // for USART1 PC10 and 11, this is in the AFR low register
-		0x00, // no change to the high alternate function register
-		0x00 // default function pointer is NULL
-		};
+	GPIOC,
+	RCC_APB2ENR_USART1EN, // bit to enable for APB2 bus
+	0x00,	// bit to enable for APB1 bus
+	RCC_AHBENR_GPIOCEN, // bit to enable for AHB bus
+	0xA00,
+	0xF00,
+	0x770000,  // for USART1 PC10 and 11, this is in the AFR low register
+	0x00, // no change to the high alternate function register
+	0x00 // default function pointer is NULL
+	};
 
 
 // InitialiseSerial - Initialise the serial port
@@ -118,10 +123,19 @@ void finished_transmission(uint32_t bytes_sent, char *sent_string) {
 }
 
 void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_t size){
-	memcpy(tx_buffer, data, size);
-	serial_port->UART->TDR = tx_buffer[0];
-	//enable transmission interrupt
-	USART1->CR1 |= USART_CR1_TXEIE;
+	
+	if (transmitting || size == 0) return; 		//don't transmit new string if old still transmitting
+
+	transmitting = 1;				//enable new transmission flag
+
+	memset((void *)tx_buffer, 0, TX_BUFFER_SIZE);	//clear buffer before transmitting
+	memcpy((void *)tx_buffer, data, size);		
+	tx_buffer[size] = '\0';				
+	tx_length = size;				//MUST set length of string for interrupt function to use
+
+	tx_index = 0;					
+	serial_port->UART->TDR = tx_buffer[tx_index];	//transmit first byte to trigger interrupt
+	USART1->CR1 |= USART_CR1_TXEIE;			
 }
 
 void finished_receiving(uint8_t num_characters, char *received_string){
@@ -146,16 +160,10 @@ void finished_receiving(uint8_t num_characters, char *received_string){
 		break;
 	default:
 		uint8_t *error_message = "Invalid string entered. Please try again!\r";
-		start_interrupt_transmission(&USART1_PORT, error_message, strlen(error_message));
+		start_interrupt_transmission(&USART1_PORT, (uint8_t *)error_message, strlen(error_message));
 		break;
 	}
-
-
-	volatile uint32_t test = 0;
-	// make a very simple delay
-	for (volatile uint32_t i = 0; i < 0x8ffff; i++) {
-		// waste time !
-	}
+	processing_flag = 1;
 }
 
 
@@ -182,13 +190,6 @@ void SerialOutputString(uint8_t *pt, SerialPort *serial_port) {
 
 void USART1_EXTI25_IRQHandler(void){
 
-	/* (USART1->ISR & USART_ISR_ORE) {
-	    USART1->ICR |= USART_ICR_ORECF; // Clear overrun error flag
-	}
-	if (USART1->ISR & USART_ISR_NE) {
-	    USART1->ICR |= USART_ICR_NCF; // Clear noise error flag
-	}*/
-
 	if (USART1_PORT.UART->ISR & USART_ISR_RXNE){
 
 		static uint8_t rx_index = 0;
@@ -199,45 +200,47 @@ void USART1_EXTI25_IRQHandler(void){
 			active_buffer[rx_index] = received_byte;
 			rx_index++;
 		}
-		else{
-			//Wrap around buffer, overwriting data but avoiding polling
-			//situation created by entering completion function here
-			//Data overwritten anyway if completion called - too long
-			rx_index = 0;
-		}
 
-		// Check if terminating character is received
-		if(received_byte == '!'){
+		// Check if buffer swap ready
+		if (received_byte == '\r' || rx_index >= RX_BUFFER_SIZE-1){
+			
+			active_buffer[rx_index] = '\0';  			// Needs \0 for strlen function
 
-			uint8_t length = rx_index;
-			rx_index = 0;
+			if(processing_flag == 1 && transmitting == 0){		// Check both buffers
+				
+				//Swap buffers
+				volatile uint8_t * temp = active_buffer;
+				active_buffer = processing_buffer;
+				processing_buffer = temp;
 
+				//Store length of received string
+				uint8_t length = rx_index;
+				rx_index = 0;
 
-			volatile uint8_t * temp = active_buffer;
-			active_buffer = processing_buffer;
-			processing_buffer = temp;
-
-			USART1_PORT.completion_function(length, processing_buffer);
-
+				//reset flags and send buffer to process
+				processing_flag = 0;
+				USART1_PORT.completion_function(length, processing_buffer);
+			}
+			//Discard received string if still processing other buffer
+			else{
+				rx_index = 0;
+			}
 		}
 
 	}
 
 	if (USART1_PORT.UART->ISR & USART_ISR_TXE){
-		static uint8_t tx_index = 1;
 
-		if(tx_index < TX_BUFFER_SIZE){
-			USART1_PORT.UART->TDR = tx_buffer[tx_index];
-			if(tx_buffer[tx_index] == '!'){
-				tx_index = 0;
-				USART1->CR1 &= ~USART_CR1_TXEIE;
-			}
-			else{
-				tx_index++;
-			}
+		if(tx_index < tx_length){
+			USART1_PORT.UART->TDR = tx_buffer[tx_index + 1];
+			tx_index++;
 		}
-		else{
-			tx_index = 0; //in case terminating character is never sent OR buffer overflow
+		else {
+			//reset flags and disable transmission
+			tx_index = 0;
+			tx_length = 0;
+			transmitting = 0;
+			USART1->CR1 &= ~USART_CR1_TXEIE;
 		}
 	}
 
