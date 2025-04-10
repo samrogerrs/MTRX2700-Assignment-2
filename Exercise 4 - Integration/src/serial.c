@@ -134,8 +134,10 @@ void finished_receiving(uint8_t num_characters, char *received_string){
 		start_interrupt_transmission(&USART1_PORT, received_string, strlen(received_string));
 		break;
 	case(init_byte == 'l'):
-
-		break;
+		received_string += 4;
+		int mask = atoi(received_string);
+		dio_init();
+		dio_set_led_state(mask);
 	case(init_byte == 'o'):
 
 		break;
