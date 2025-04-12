@@ -125,18 +125,25 @@ void finished_transmission(uint32_t bytes_sent, char *sent_string) {
 
 void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_t size){
 
-	if (transmitting || size == 0) return; 		//don't transmit new string if old still transmitting
+	if (transmitting || (size + 4) == 0) return;
 
-	transmitting = 1;				//enable new transmission flag
+	transmitting = 1;
 
-	memset((void *)tx_buffer, 0, TX_BUFFER_SIZE);	//clear buffer before transmitting
-	memcpy((void *)tx_buffer, data, size);
-	tx_buffer[size] = '\0';
-	tx_length = size;				//MUST set length of string for interrupt function to use
+	memset((void *)tx_buffer, 0, TX_BUFFER_SIZE);
+	tx_buffer[0] = '\r';
+	tx_buffer[1] = '\n';
+
+	memcpy((void *)(tx_buffer+2), data, size);
+
+	tx_buffer[size] = '\r';
+	tx_buffer[size + 1] = '\n';
+	//tx_buffer[size] = '\0';
+	tx_length = size + 4;
 
 	tx_index = 0;
-	serial_port->UART->TDR = tx_buffer[tx_index];	//transmit first byte to trigger interrupt
+	serial_port->UART->TDR = tx_buffer[tx_index];
 	USART1->CR1 |= USART_CR1_TXEIE;
+
 }
 
 
@@ -148,12 +155,6 @@ void finished_receiving(uint8_t num_characters, char *received_string){
 	switch(received_string[0]){
 		case 's':
 			received_string += 7;
-			int i = 0;
-			while (received_string[i] != '\0' && i < sizeof(received_string)) {
-			    i++;
-			}
-			received_string[i++]= '\r';
-			received_string[i++]= '\n';
 			start_interrupt_transmission(&USART1_PORT, received_string, strlen(received_string));
 			break;
 		case 'l':
