@@ -144,6 +144,7 @@ void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_
 void finished_receiving(uint8_t num_characters, char *received_string){
 
 	int init_byte = received_string[0];
+	processing_flag = 0;
 	switch(received_string[0]){
 		case 's':
 			received_string += 7;
