@@ -9,7 +9,6 @@
 // internal led stuff
 static uint8_t led_state = 0;          // current led state
 static uint32_t led_rate_ms = 100;     // default cooldown time (100ms)
-static uint8_t led_update_allowed = 0; // flag to check if we can update leds
 
 // function pointer for button callback
 static void (*button_callback)(void) = 0x00;
@@ -18,27 +17,34 @@ static void (*button_callback)(void) = 0x00;
 // handles button press interrupts
 void EXTI0_IRQHandler(void)
 {
-    // call the button handler if we have one
+    // disable further button interrupts
+    EXTI->IMR &= ~EXTI_IMR_MR0;
+
+    // call the button handler if it's set
     if (button_callback != 0x00) {
         button_callback();
     }
 
     // clear the interrupt flag
     EXTI->PR |= EXTI_PR_PR0;
+
+    // start the rate-limiting timer
+    TIM2->CNT = 0;
+    TIM2->CR1 |= TIM_CR1_CEN;
 }
 
 
 // TIM2 IRQ Handler for led rate limiting
 void TIM2_IRQHandler(void)
 {
-    // re-enable LED updates
-    led_update_allowed = 1;
-
     // stop the timer
     TIM2->CR1 &= ~TIM_CR1_CEN;
 
     // clear the interrupt flag
     TIM2->SR &= ~TIM_SR_UIF;
+
+    // re-enable the button interrupt
+    EXTI->IMR |= EXTI_IMR_MR0;
 }
 
 // enable clocks of perifs
@@ -62,6 +68,7 @@ static void initialise_board(void)
 // config timer for led rate limiting
 static void configure_timer(void)
 {
+	__disable_irq();
     // config tim2 for 1ms interrupts
     TIM2->PSC = 7999;  // 8mhz / 8000 = 1khz
     TIM2->ARR = led_rate_ms;
@@ -75,6 +82,7 @@ static void configure_timer(void)
 
     // dont start yet, wait till requested
     TIM2->CR1 &= ~TIM_CR1_CEN;
+    __enable_irq();
 }
 
 //enable button interrupt
@@ -116,7 +124,6 @@ void dio_init(void (*callback)(void))
 
     //initialise led state
     led_state = 0x00;
-    led_update_allowed = 1;
 
     // apply initial state
     uint8_t *led_register = ((uint8_t*)&(GPIOE->ODR)) + 1;
@@ -132,8 +139,7 @@ uint8_t dio_get_led_state(void)
 //set the leds state, taking a uint8 as input
 void dio_set_led_state(uint8_t state)
 {
-    // only update if allowed
-    if (led_update_allowed) {
+
         // update the state
         led_state = state;
 
@@ -141,15 +147,11 @@ void dio_set_led_state(uint8_t state)
         uint8_t *led_register = ((uint8_t*)&(GPIOE->ODR)) + 1;
         *led_register = led_state;
 
-        // stop updates during cooldown
-        led_update_allowed = 0;
-
         // reset counter
         TIM2->CNT = 0;
 
         // start timer to re-enable updates after delay
         TIM2->CR1 |= TIM_CR1_CEN;
-    }
 }
 
 
