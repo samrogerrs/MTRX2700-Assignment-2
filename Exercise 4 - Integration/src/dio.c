@@ -10,8 +10,6 @@
 static uint8_t led_state = 0;          // current led state
 static uint32_t led_rate_ms = 100;     // default cooldown time (100ms)
 
-// function pointer for button callback
-static void (*button_callback)(void) = 0x00;
 
 
 // handles button press interrupts
@@ -21,9 +19,6 @@ void EXTI0_IRQHandler(void)
     EXTI->IMR &= ~EXTI_IMR_MR0;
 
     // call the button handler if it's set
-    if (button_callback != 0x00) {
-        button_callback();
-    }
 
     // clear the interrupt flag
     EXTI->PR |= EXTI_PR_PR0;
@@ -111,10 +106,8 @@ static void enable_interrupt(void)
 }
 
 //initialise digital io with callback function
-void dio_init(void (*callback)(void))
+void dio_init(void)
 {
-    //set the button callback function
-    button_callback = callback;
 
     //initialise hardware
     enable_clocks();

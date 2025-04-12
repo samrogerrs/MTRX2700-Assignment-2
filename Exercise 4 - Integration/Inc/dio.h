@@ -11,7 +11,7 @@
 #include "stm32f303xc.h"
 
 // initialise and set up button callback
-void dio_init(void (*callback)(void));
+void dio_init(void);
 
 // return which leds are currently on
 uint8_t dio_get_led_state(void);

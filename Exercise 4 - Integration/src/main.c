@@ -6,7 +6,7 @@
  ******************************************************************************
  * @attention
  *
- * Copyright (c) 2025 STMicroelectronics.
+ * Copyright (c) 2023 STMicroelectronics.
  * All rights reserved.
  *
  * This software is licensed under terms that can be found in the LICENSE file
@@ -17,13 +17,40 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "serial.h"
+
+
+#include "stm32f303xc.h"
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
-  #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
+#warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
+
+
 
 int main(void)
 {
-    /* Loop forever */
+	uint8_t *string_to_send = "This is a string !\r\n";
+
+	//void (*completion_function)(uint32_t) = &finished_transmission;
+
+	SerialInitialise(BAUD_115200, &USART1_PORT, &finished_receiving);
+
+	enable_USART_interrupt();
+
+
+	//initialise buffer
+	//uint8_t buffer_size = 64;
+	//char buffer[buffer_size];
+
+	//start Receiving
+	//SerialInputString(buffer_size, &USART1_PORT, buffer);
+
+	/* Loop forever */
 	for(;;);
+
 }
+

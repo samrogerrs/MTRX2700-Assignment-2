@@ -1,7 +1,8 @@
 #include "serial.h"
 #include "dio.h"
+#include "string.h"
 #include "stm32f303xc.h"
-
+#include "bin2int.h"
 
 //transmitting buffer
 volatile uint8_t tx_buffer[TX_BUFFER_SIZE];
@@ -123,45 +124,53 @@ void finished_transmission(uint32_t bytes_sent, char *sent_string) {
 }
 
 void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_t size){
-	
+
 	if (transmitting || size == 0) return; 		//don't transmit new string if old still transmitting
 
 	transmitting = 1;				//enable new transmission flag
 
 	memset((void *)tx_buffer, 0, TX_BUFFER_SIZE);	//clear buffer before transmitting
-	memcpy((void *)tx_buffer, data, size);		
-	tx_buffer[size] = '\0';				
+	memcpy((void *)tx_buffer, data, size);
+	tx_buffer[size] = '\0';
 	tx_length = size;				//MUST set length of string for interrupt function to use
 
-	tx_index = 0;					
+	tx_index = 0;
 	serial_port->UART->TDR = tx_buffer[tx_index];	//transmit first byte to trigger interrupt
-	USART1->CR1 |= USART_CR1_TXEIE;			
+	USART1->CR1 |= USART_CR1_TXEIE;
 }
+
+
 
 void finished_receiving(uint8_t num_characters, char *received_string){
 
 	int init_byte = received_string[0];
+	switch(received_string[0]){
+		case 's':
+			received_string += 7;
+			int i = 0;
+			while (received_string[i] != '\0' && i < sizeof(received_string)) {
+			    i++;
+			}
+			received_string[i++]= '\r';
+			received_string[i++]= '\n';
+			start_interrupt_transmission(&USART1_PORT, received_string, strlen(received_string));
+			break;
+		case 'l':
+			received_string += 4;
+			int mask = binary_to_int(received_string);
+			dio_init();
+			dio_set_led_state(mask);
+			break;
+		case 'o':
 
-	switch(init_byte){
-	case(init_byte == 's'):
-		received_string += 7;
-		start_interrupt_transmission(&USART1_PORT, received_string, strlen(received_string));
-		break;
-	case(init_byte == 'l'):
-		received_string += 4;
-		int mask = atoi(received_string);
-		dio_init();
-		dio_set_led_state(mask);
-	case(init_byte == 'o'):
+			break;
+		case 't':
 
-		break;
-	case(init_byte == 't'):
-
-		break;
-	default:
-		uint8_t *error_message = "Invalid string entered. Please try again!\r";
-		start_interrupt_transmission(&USART1_PORT, (uint8_t *)error_message, strlen(error_message));
-		break;
+			break;
+		default:
+			uint8_t *error_message = "Invalid string entered. Please try again!\r\n";
+			start_interrupt_transmission(&USART1_PORT, (uint8_t *)error_message, strlen(error_message));
+			break;
 	}
 	processing_flag = 1;
 }
@@ -203,11 +212,11 @@ void USART1_EXTI25_IRQHandler(void){
 
 		// Check if buffer swap ready
 		if (received_byte == '\r' || rx_index >= RX_BUFFER_SIZE-1){
-			
+
 			active_buffer[rx_index] = '\0';  			// Needs \0 for strlen function
 
 			if(processing_flag == 1 && transmitting == 0){		// Check both buffers
-				
+
 				//Swap buffers
 				volatile uint8_t * temp = active_buffer;
 				active_buffer = processing_buffer;

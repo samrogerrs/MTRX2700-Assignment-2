@@ -80,4 +80,3 @@ void SerialInputString(uint8_t buffer_size, SerialPort *serial_port, char *buffe
  
  
 #endif
-
