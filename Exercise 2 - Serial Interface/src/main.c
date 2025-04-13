@@ -29,32 +29,38 @@
 #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
 
-
+#define BUFFER_SIZE 64
 
 int main(void)
 {
-	//uint8_t *string_to_send = "This is a string !\r\n";
-
-	//void (*completion_function)(uint32_t) = &finished_transmission;
-
+	//Part 2.3.2a - Transmission:
+	/*
 	SerialInitialise(BAUD_115200, &USART1_PORT, &finished_receiving);
+ 
+ 	//Write a string to send:
+	uint8_t * string_to_send = "This is a string! \r\n";
 
+	//Use transmission function to send it:
+	SerialOutputString(string_to_send, &USART1_PORT);
+	*/
+
+	//Part 2.3.2a - Receiving
+	/*
+ 	SerialInitialise(<BaudRate>, &<UART_PORT>, &<selected_completion_function>);
+
+	char buffer[BUFFER_SIZE];
+	SerialInputString(BUFFER_SIZE, &USART1_PORT, buffer);
+
+	for(;;);
+ 	*/
+
+	//Part 2.3.2d and 2.3.2c - Double buffer and receiving/transmitting interrupts
+	//In serial.c select which verion of interrupt handle should be used
+ 	SerialInitialise(BAUD_115200, &USART1_PORT, &finished_receiving);
 	enable_USART_interrupt();
 
-	while (1) {
-
-		for (volatile uint32_t i = 0; i < 500000; i++) { /* Delay */ }
-	}
-
-	//initialise buffer
-	//uint8_t buffer_size = 64;
-	//char buffer[buffer_size];
-
-	//start Receiving
-	//SerialInputString(buffer_size, &USART1_PORT, buffer);
-
-	/* Loop forever */
 	for(;;);
+ 	
 
 }
 
