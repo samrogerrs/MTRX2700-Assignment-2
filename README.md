@@ -305,7 +305,9 @@ int main(void) {
 }
 ```
 ### **Testing**
+When SerialInputString is sent a message larger than 64 characters, it stores the first 63 characters then appends a null termination character to the end as expected. The remaining data is lost.
 
+When SerialInputString is sent non-alphanumeric characters such as '#', '%', '\r' '\n', in the centre of the message, it can handle the single character cases, however, be warned it will store '\n' as '\''n' 
 
 <details>
 <summary><strong>Task 2B</strong></summary>
