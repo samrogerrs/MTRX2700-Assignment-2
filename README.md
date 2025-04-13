@@ -143,15 +143,52 @@ To check if everything is working:
 <details>
 <summary><strong>Task 1C</strong></summary>
 
-#### **Description**
-Insert description
+#### Description
+This module makes it easy to control the LEDs and respond to button presses on the STM32F303 Discovery board. The LED state is encapsulated within the module and can only be accessed through get/set functions. When you set it up, pressing the user button toggles between lighting the top half and bottom half of the board's LEDs.
 
-#### **Usage**
-Insert how to use
+#### Usage
+To use this module with get/set functions for LED control:
+```c
+#include "dio.h"
 
-### **Testing**
-Insert how module was tested
-</details>
+// Define what happens when button is pressed
+void button_pressed(void)
+{
+    uint8_t current_state = dio_get_led_state();
+    
+    // Check which half is currently lit
+    if ((current_state & 0xF0) == 0xF0) {
+        // Switch to bottom half
+        dio_set_led_state(0x0F);
+    } else {
+        // Switch to top half
+        dio_set_led_state(0xF0);
+    }
+}
+
+// Main function - loop
+int main(void)
+{
+    // Initialize digital I/O with callback
+    dio_init(&button_pressed);
+    
+    // Set initial LED state (bottom half lit)
+    dio_set_led_state(0x0F);
+    
+    // Loop forever
+    for(;;) {
+        // Interrupts handle all processing
+    }
+}
+```
+
+#### Testing
+To check if everything is working:
+1. Load the program onto your STM32F303 Discovery board
+2. When it starts running, the bottom half of the LEDs should light up
+3. Press the blue user button on the board
+4. The top half of LEDs should now light up (and the bottom half should turn off)
+5. Press the button again and it should switch back
 
 <details>
 <summary><strong>Task 1D</strong></summary>
