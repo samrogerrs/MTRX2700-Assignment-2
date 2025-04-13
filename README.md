@@ -305,23 +305,79 @@ int main(void) {
 }
 ```
 ### **Testing**
-When SerialInputString is sent a message larger than 64 characters, it stores the first 63 characters then appends a null termination character to the end as expected. The remaining data is lost.
+When SerialInputString is sent a message larger than 64 characters, it stores the first 63 characters then appends a null termination character to the end as expected. The remaining data is lost, so the user should be careful to not overflow the buffer. 
 
-When SerialInputString is sent non-alphanumeric characters such as '#', '%', '\r' '\n', in the centre of the message, it can handle the single character cases, however, be warned it will store '\n' as '\''n' 
+When SerialInputString is sent non-alphanumeric characters such as '#', '%', '\r' '\n', in the centre of the message, it can handle the single character cases, however, be warned it will store '\n' as '\''n'. Therefore newline, carriage return and null-termination characters should be appended on a string once received to be further processed (e.g. with string.h functions such as strlen). 
+
+Whitespace
+
+Empty string
+carriage return only
+two carriage returns
+long delay whilst typing
+
+
 </details>
 <details>
-<summary><strong>Task 2B</strong></summary>
+<summary><strong>Task 2.3.2B</strong></summary>
 
 #### **Description**
-Insert description
+There are two callback functions, one called after a string has been received, and one after a string has been transmitted. The transmission callback function features a short delay function, to prevent timing issues by calling another function or process too early. It takes in the pointer to the transmitted buffer as well as the number of characters. The receiving callback function takes in a pointer to the received string buffer and the number of characters. 
 
 #### **Usage**
-Insert how to use
+The callback function is initialised during SerialInitialise, enabling it to be stored in the UART struct to be easily accessed. Both SerialOutputString and SerialInputString utilise the initialised callback function.  As such, there is no need to call it in the main function. 
 
 ### **Testing**
-Insert how module was tested
+On initialising the UART with the finished_receiving function, stepping through the debugger can demonstrate it being called in the last line of SerialInputString. Equally, the finished_transmitting function can be debugged that way to ensure the completion function is being called correctly. However, one limitation of initialising the completion function as part of the UART struct is that the SerialInputString and SerialOutputString cannot be used without re-initialising the board, as only one completion function is linked at a time. 
 
 </details>
+</details>
+<summary><strong>Task 2.3.2C</strong></summary>
+
+### **Description**
+Three functions make up the interrupt module; the interrupt handler function 'USART1_EXTI25_IRQHandler', the initialisation of the USART1 interrupt function and the finished_receiving completion function as outlined in 2.3.2B. The interrupt handler, once initialised, is triggered when a byte is detected in the RDR (receive data register), tripping the RXNE flag. The STM32 then searches for the interrupt handler function under its definition within stm32f303xc.h. The data is stored in the buffer until either a carriage return character is detected, or until the buffer is full. A null terminated character is appended onto the end of the string, enabling it to be processed with string.h functions such as strlen. It then calls the completion function finished_receiving (initialised by SerialInitialise), sending through the number of characters received and a pointer to the buffer for further processing. 
+
+### **Usage**
+To use the receiving interrupt function, the UART initialisation function and the interrupt initialisation function must be called in main as follows:
+```c
+#include serial.h
+
+#define BUFFER_SIZE <define size here>
+
+int main(void) {
+
+	SerialInitialise(<BaudRate>, &<UART_PORT>, &<selected_completion_function>);
+	enable_USART_interrupt();
+}
+```
+
+### **Testing**
+
+<details>
+</details>
+<summary><strong>Task 2.3.2D</strong></summary>
+
+### **Description**
+Transmitting Interrupt: The transmitting interrupt works differently to the receiving interrupt. Unlike when receiving data, when the RXNE flag is tripped via data being sent to the RDR register, the user must trigger the transmission interrupt by sending the first byte of data in a buffer to the Transmission Data Register (TDR) in order to trigger the interrupt and send the rest of the data in the buffer. As such, the transmission interrupt module consists of three functions: enable_USART_interrupt (used also for the receiving interrupt initialisation), USART1_EXTI25_IRQHandler (the same function called when the receiving interrupt is triggered), and start_interrupt_transmission, the function that sends the first byte of data into the TDR. start_interrupt_transmission only runs if the size of the transmitted buffer is not zero and there is not another string already transmitting. It initialises a buffer that is four bytes larger than the string to be transmitted, in order to append \r\n to either end. As such, when sent to an interface such as PuTTy, it will send on a line beneath the input message, and then begin a new line to send a new input. 
+
+Double Buffer: The purpose of the double buffer is to prevent data being scrambled from new data being received whilst old data is still being processed or transmitted out. As the name implies, the double buffer utilises two separate buffers, an 'active' buffer for receiving and a 'processing' buffer that is being parsed or transmitted. When serial data is sent to the STM32 microcontroller, the interrupt handler function is triggered, and the data is stored into the active buffer until the buffer is full or a carriage return character is detected. Once the active buffer has completed storing the data, it checks that the processing buffer has finished being parsed or transmitted. If this is so, the buffers swap over so the newly received data can be processed whilst new serial communication can stored. If not, the buffers do not swap, and the receiving buffer is cleared in order to store newly received data until the processing buffer is ready. 
+
+### **Usage**
+The double buffer is implemented within USART1_EXTI25_IRQHandler. Buffer sizes of the active and processing buffers can be altered by the user in the serial.h file to cater to different applications. As such, there is no need to call anything in the main function apart from enabling the USART1 interrupt and initialising the USART1 port over serial communication. It is important to note that each UART has a separate interrupt initialisations. As such, if UART2 is initialised instead of USART1, USART1_EXTI25_IRQHandler will not be triggered and no data will be received or transmitted through interrupts. This means main should take care to initialise USART1:
+```c
+#include serial.h
+
+#define BUFFER_SIZE <define size here>
+
+int main(void) {
+
+	SerialInitialise(<BaudRate>, &USART1_PORT, &finished_receiving);
+	enable_USART_interrupt();
+}
+```
+
+### **Testing**
+
 
 <details>
 <summary><strong>Task 2C</strong></summary>
