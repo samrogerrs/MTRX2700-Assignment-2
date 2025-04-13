@@ -268,6 +268,8 @@ To use the transmission and receiving polling function, the UART port must first
 
 int main(void) {
 	SerialInitialise(<BaudRate>, &<UART_PORT>, &<selected_completion_function>);
+
+	for(;;);
 }
 
 ```
@@ -302,6 +304,8 @@ int main(void) {
 
 	char buffer[BUFFER_SIZE];
 	SerialInputString(BUFFER_SIZE, &USART1_PORT, buffer);
+
+	for(;;);
 }
 ```
 ### **Testing**
@@ -346,6 +350,8 @@ int main(void) {
 
 	SerialInitialise(<BaudRate>, &<UART_PORT>, &<selected_completion_function>);
 	enable_USART_interrupt();
+
+	for(;;);
 }
 ```
 
@@ -383,6 +389,8 @@ int main(void) {
 
 	SerialInitialise(<BaudRate>, &USART1_PORT, &finished_receiving);
 	enable_USART_interrupt();
+
+	for(;;);
 }
 ```
 
@@ -495,10 +503,37 @@ Confirmed timer disables itself cleanly after execution.
 <summary><strong>Exercise 4 - Integration 🔄</strong></summary>
 
 #### **Description**
+The code takes in input via the serial communication to perform four different operations. If an invalid input is sent, the code will respond with an error message and ask the user to try again. 
 
+If provided with the input "serial <message>" the <message> will be transmitted back via the transmitting interrupt module onto the interface (PuTTy or Cutecom). It is designed to send the message back framed as \r\n<message>\r\n such that it will start on a new line underneath the input, and a new input can commence underneath the returned message to prevent the interface overwriting. 
+
+If provided with the input "led <led_pattern>, the LEDs on the microcontroller will be lit up accoding to the specified pattern. For example, "led 10101010" would turn on every second LED whilst "led 11110000" would turn on the first four. 
+
+If provided with the input "timer <number>", the LEDs will begin to flash on an off as specified by the number of milliseconds provided. For example, the input "timer 1000" will turn the current LED pattern on and off at intervals of 1000 milliseconds. 
+
+If provuded with the input "oneshot <number>", the set LED pattern currently on the microcontrollers will invert (but will not stop the flashing if a previous timer command is called). For instance, if provided with "oneshot 500" as the input, if the current LED pattern is 10101010, after 500 milliseconds it will inver to 01010101, and then continue flashing if a previous timer function has been called. If no previous timer function has been called, such that the LEDs are all off, it will simply turn them all on. 
 
 #### **Usage**
-Insert how to use
+To run the integrated code, the serial communication UART (USART1 for this code) must be initialised, alongside enabling all required interrupts for serial input, serial transmission, timers, clocks and LEDs. This can be done by calling the following functions in main:
+
+```c
+#include serial.h
+#include dio.h
+#include timer_module.h
+
+int main(void) {
+	//Initialise serial communication
+    	SerialInitialise(BAUD_115200, &USART1_PORT, &finished_receiving);
+
+	//enable all interrupts and configurations
+	enable_USART_interrupt();
+	dio_init();
+	enable_timer_interrupts();
+
+	//infinite loop to run program
+	for(;;);
+}
+```
 
 ### **Testing**
 Insert how module was tested
