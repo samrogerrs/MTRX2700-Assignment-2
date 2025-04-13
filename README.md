@@ -313,7 +313,7 @@ SerialInputString can handle whitespace, even empty buffer of just spaces. Howev
 
 The received string can be easily accessed by pasting the hexadecimal memory address into the STM32 interface memory browser. The full string should appear unless the inputted string exceeds 63 characters (last buffer character is reserved for carriage return). 
 
-<details>
+</details>
 
 <details>
 <summary><strong>Task 2.3.2B</strong></summary>
@@ -329,7 +329,7 @@ On initialising the UART with the finished_receiving function, stepping through 
 
 </details>
 
-</details>
+<details>
 <summary><strong>Task 2.3.2C</strong></summary>
 
 ### **Description**
@@ -350,19 +350,19 @@ int main(void) {
 ```
 
 ### **Testing**
-Exceeding buffer length: 
+Exceeding buffer length: Stores first 63 characters only
 
-Whitespace:
+Whitespace: Stores into buffer with no issue, as long as the whitespace does not exceed 63 bytes (if it does only 63 bytes of whitespace will be stored). 
 
-Carriage Return Only (empty string):
+Carriage Return Only (empty string): The carriage return does store in the buffer, as all data is stored before it is checked against the carriage return character to terminate taking in data. This can be seen by going into the memory browser and seeing the hex 0x0D character. 
 
-Double Carriage Return:
+Double Carriage Return: Unlike during polling, where the carriage return terminates reading from RDR until the function is called again, typing a double carriage return stores them both into the buffer. However, since the receiving buffer index is reset to zero after each string is sent, only one carriage return appears in the buffer after the two have been typed (can check the first one really does store by pausing the code and looking at the memory browser between them). 
 
-Delay (1 minute between letters):
+Delay (1 minute between letters): Stores with no issue
 
-Quick input (holding down a key to send letters as fast as possible):
+Quick input (holding down a key to send letters as fast as possible): Stores with no issue
 
-<details>
+</details>
 	
 <details>
 <summary><strong>Task 2.3.2D</strong></summary>
@@ -387,9 +387,23 @@ int main(void) {
 ```
 
 ### **Testing**
+Whitespace: Stores without issue
+
+Sending data quickly (holding down key to type very fast): Stores without issue
+
+Carriage return only: Stores into the buffer as expected. 
+
+Double carriage return: Stores one into the first buffer, and one into the second as expected. The first carriage return triggers a check of the flags and then swaps the buffers. The second carriage return will repeat the process. 
+
+Change of Buffers - do they actually swap?: Buffers appear to swap when both are ready. This can be checked by loading the memory browser and looking at buffer1 and buffer2. The first input string stores in buffer1, the second stores in buffer2. The third string overwrites the first and stores in buffer1 again as intended. 
+
+Debugging:
+If the received strings are not appearing in either of the buffers, it is likely an error either with the USART initialisation, or the pointer to the buffers being initialised incorrectly. Use breakpoints to check if the interrupt handler function is being triggered when data is typed into PuTTy or Cutecom; if it is, the buffers are likely the issue. If it isn't, the user should check they have the correct handler name, and that they have initialised the interrupt correctly. 
+
+If the buffers are not swapping, check if the flags are changing values. Load their address into the memory browser and step through the code. Ensure flags are being reset to zero when operations are finished (e.g. after processing data for the processing buffer, remember to set the finished_processing flag back to 1 to indicate buffers can swap). 
 
 
-<details>
+</details>
 
 <details>
 
@@ -481,7 +495,7 @@ Confirmed timer disables itself cleanly after execution.
 <summary><strong>Exercise 4 - Integration 🔄</strong></summary>
 
 #### **Description**
-Insert description
+
 
 #### **Usage**
 Insert how to use
