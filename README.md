@@ -70,11 +70,6 @@ Note that the repository is not publically available, for reasons pertaining to 
 <summary><strong>Task 1A</strong></summary>
 
 #### Description
-This module encapsulates the digital I/O functionality for controlling LEDs and handling button presses on the STM32F303 Discovery board. When initialized, it configures the button (PA0) to trigger an interrupt that toggles between lighting the upper half (PE12-PE15) and lower half (PE8-PE11) of the LEDs.
-
-# Digital I/O Module
-
-#### Description
 This module makes it easy to control the LEDs and respond to button presses on the STM32F303 Discovery board. When you set it up, pressing the user button automatically toggles between lighting the top half and bottom half of the board's LEDs.
 
 #### Usage
