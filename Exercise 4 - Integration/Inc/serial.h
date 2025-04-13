@@ -76,7 +76,7 @@ void SerialInputChar(uint8_t *data, SerialPort *serial_port);
 // SerialInputString - inputs a string until '!' character is sent from serial port
 void SerialInputString(uint8_t buffer_size, SerialPort *serial_port, char *buffer);
 
-
+extern uint8_t current_led_mask;
  
  
 #endif

@@ -30,8 +30,6 @@
 #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
 
-
-
 int main(void)
 {
 	// Initialise USART1 serial communication
@@ -40,7 +38,7 @@ int main(void)
 	// Initialise interrupts
 	enable_USART_interrupt();
 	dio_init();
-
+	enable_timer_interrupts();
 	// Continue Program forever
 	for(;;);
 

@@ -1,5 +1,6 @@
 #include "serial.h"
 #include "dio.h"
+#include "timer_module.h"
 #include "string.h"
 #include "stm32f303xc.h"
 #include "bin2int.h"
@@ -146,51 +147,54 @@ void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_
 
 }
 
-
-
 void finished_receiving(uint8_t num_characters, char *received_string){
+    uint8_t init_byte = received_string[0];
+    processing_flag = 0;
 
-	uint8_t init_byte = received_string[0];
-	processing_flag = 0;
+    uint8_t *finished_op = "Finished task. Send new prompt!";
 
-	switch(received_string[0]){
-		case 's':
-			received_string += 7;
-			start_interrupt_transmission(&USART1_PORT, received_string, strlen(received_string));
-			break;
-		case 'l':
+    switch(received_string[0]){
+        case 's':
+            received_string += 7;
+            start_interrupt_transmission(&USART1_PORT, received_string, strlen(received_string));
+            break;
+        case 'l':
+        	received_string += 4;
 
-			received_string += 4;
+			// Remove trailing newline characters
+			char *newline = strchr(received_string, '\r');
+			if (newline) *newline = '\0';
+
 			int mask = binary_to_int(received_string);
-			//dio_init();
 			dio_set_led_state(mask);
 
 			uint8_t *finished_op = "Finished task. Send new prompt!";
 			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+			break;
+        case 'o':
+        	while (*received_string != ' ' && *received_string != '\0') received_string++;
+			if (*received_string == ' ') received_string++;
 
-			break;
-		case 'o':
-			
-			//put timer function here
-			
-			uint8_t *finished_op = "Finished task. Send new prompt!";
-			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+			uint32_t delay = atoi(received_string);
+			start_oneshot(delay, dio_invert_leds);  // direct callback
+            start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+            break;
+        case 't':
+        	while (*received_string != ' ' && *received_string != '\0') received_string++;
+			if (*received_string == ' ') received_string++;
 
-			break;
-		case 't':
-			
-			//put timer function here
-			
-			uint8_t *finished_op = "Finished task. Send new prompt!";
-			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+			uint32_t period = atoi(received_string);
+			dio_start_blinking();
+			timer_init(period, dio_toggle_leds);
+            start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+            break;
+        default:
+            uint8_t *error_message = "Invalid string entered. Please try again!\r\n";
+            start_interrupt_transmission(&USART1_PORT, (uint8_t *)error_message, strlen(error_message));
+            break;
+    }
 
-			break;
-		default:
-			uint8_t *error_message = "Invalid string entered. Please try again!\r\n";
-			start_interrupt_transmission(&USART1_PORT, (uint8_t *)error_message, strlen(error_message));
-			break;
-	}
-	processing_flag = 1;
+    processing_flag = 1;
 }
 
 
