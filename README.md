@@ -189,7 +189,7 @@ To check if everything is working:
 3. Press the blue user button on the board
 4. The top half of LEDs should now light up (and the bottom half should turn off)
 5. Press the button again and it should switch back
-
+</details>
 <details>
 <summary><strong>Task 1D</strong></summary>
 
@@ -205,7 +205,7 @@ Insert how module was tested
 </details>
 
 </details>
-</details>
+
 
 ---
 
