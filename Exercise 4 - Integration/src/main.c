@@ -21,6 +21,7 @@
 #include <stdio.h>
 
 #include "serial.h"
+#include "dio.h"
 
 
 #include "stm32f303xc.h"
@@ -33,23 +34,14 @@
 
 int main(void)
 {
-	uint8_t *string_to_send = "This is a string !\r\n";
-
-	//void (*completion_function)(uint32_t) = &finished_transmission;
-
+	// Initialise USART1 serial communication
 	SerialInitialise(BAUD_115200, &USART1_PORT, &finished_receiving);
 
+	// Initialise interrupts
 	enable_USART_interrupt();
+	dio_init();
 
-
-	//initialise buffer
-	//uint8_t buffer_size = 64;
-	//char buffer[buffer_size];
-
-	//start Receiving
-	//SerialInputString(buffer_size, &USART1_PORT, buffer);
-
-	/* Loop forever */
+	// Continue Program forever
 	for(;;);
 
 }
