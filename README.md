@@ -11,10 +11,9 @@
 
 | Name            | Role                  | Responsibilities                      |  
 |----------------|----------------------|--------------------------------------|  
-| A  | ROLEA     | A |  
-| Sam      | ROLEB   | B |  
-| B  | ROLEC    | C|  
-| C    |  ROLED   | D | 
+| Connor  | Exercise 3: Timer Interface     | All of exercise 3, all timer functions in Integration |  
+| Sam      | Exercise 1: Digital IO   | All of exercise 1, all LED functions in Integration |  
+| Penelope  | Exercise 2: Serial Interface    | All of exercise 2, all serial communication components in Integration|  
 
 ## Project Overview 📜
 This repository was made to meet requirements for the ASM Lab (Assignment 2) as part of coursework in MTRX2700 (Mechatronics 2) at the **University of Sydney**. The code is mostly in the **C** coding language and was written for, and tested on, **STM32F3 Discovery** micro-controllers.  
@@ -39,12 +38,8 @@ Note that the repository is not publically available, for reasons pertaining to 
   - **MacOS:** [CuteCom](https://cutecom.sourceforge.io/)
 
 ### Hardware Requirements
-- **One or Two STM32F3 Discovery Boards**
-  - Two boards are required for **Exercise 3E** and **Integration**, connected via serial communication.
-- **3 x 30AWG female to female jumper cables**
-  - Required to connect the two boards in the aforementioned tasks
-  - They are relatively cheap, and available at [Core Electronics](https://core-electronics.com.au/female-to-female-dupont-line-40-pin-10cm-24awg.html?gad_source=1&gclid=Cj0KCQjw4v6-BhDuARIsALprm32sz4oCAe0GOuz8QdB3mVvDaUouCLKruWdyOYjAz_SCJl4C5ngxbRAaAuPGEALw_wcB)
-
+- **One STM32F3 Discovery Boards**
+  - All modules and integration can be completed with a single STM32F3Discovery board and a virtual connection via USB to PC or Laptop for serial communication.
 
 ## Installation & Setup
 ### STM32CubeIDE Installation
@@ -55,6 +50,12 @@ Note that the repository is not publically available, for reasons pertaining to 
 - **Windows (PuTTY):**
   1. Download from [PuTTY’s official website](https://www.putty.org/).
   2. Install using the provided installer.
+- ***PuTTY Interface Recommendations:***
+  1. Open new PuTTy terminal
+  2. Select "serial" under "Connection Type" and type in COM port (can be found using device manager)
+  3. Type in Board Speed (ensure same as selected in board initialisation function)
+  4. In Terminal Category --> Line Discipline Options select "Force On" (enables typed words to be viewed on PuTTy terminal)
+  5. In Serial Category --> Flow Control select "NONE" (serial communication is asynchronous)
 - **MacOS (CuteCom):**
   1. Install via Homebrew (Recommended):
      ```bash
@@ -175,17 +176,57 @@ Insert how module was tested
 <summary><strong>Exercise 2 - Serial Interface 📡</strong></summary>
 
 <details>
-<summary><strong>Task 2A</strong></summary>
+<summary><strong>Task 2.3.2A</strong></summary>
 
 #### **Description**
-Insert description
+These functions are designed to enable serial communication over a specified UART Port to receive and transmit strings of data through polling methods. The user is able to modify buffer sizes to accomodate different applications. Before receiving or transmitting any data, the user needs to initialise the UART port through the initialisation function, and then can send and receive data as much as they want. The polling receiving function considers a carriage return ('\r') character as the terminating character in the string, so will continue receiving the data until that character is reached or until the buffer is full. The transmission polling function will send the buffer until a '\r' character is detected or until the end of the buffer is reached. 
 
 #### **Usage**
-Insert how to use
+To use the transmission and receiving polling function, the UART port must first be initialised in main:
 
+```c
+#include serial.h
+
+int main(void) {
+	SerialInitialise(<BaudRate>, &<UART_PORT>, &<selected_completion_function>);
+}
+
+```
+The user can select Baud Rates of: 9600, 19200, 38400, 57600, and 115200. The baud rate should be selected as "BAUD_<baud rate>" for example, "BAUD_115200". 
+
+Once initialised, the polling transmission function can be called to send a string of data as follows: 
+```c
+#include serial.h
+
+int main(void) {
+
+	SerialInitialise(<BaudRate>, &<UART_PORT>, &<selected_completion_function>);
+
+	//Write a string to send:
+	uint8_t * string_to_send = "This is a string! \r\n";
+
+	//Use transmission function to send it:
+	SerialOutputString(string_to_send, &USART1_PORT);
+}
+
+```
+A buffer must be initialised for the receiving function to store the data:
+#include serial.h
+```c
+#include serial.h
+
+#define BUFFER_SIZE <define size here>
+
+int main(void) {
+
+	SerialInitialise(<BaudRate>, &<UART_PORT>, &<selected_completion_function>);
+
+	char buffer[BUFFER_SIZE];
+	SerialInputString(BUFFER_SIZE, &USART1_PORT, buffer);
+}
+```
 ### **Testing**
-Insert how module was tested
-</details>
+
 
 <details>
 <summary><strong>Task 2B</strong></summary>
