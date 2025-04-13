@@ -365,7 +365,7 @@ Insert how module was tested
 This task implements a timer module that triggers a user-defined callback function at regular intervals using TIM2. The interval (in milliseconds) is passed during initialisation. Function pointers are used to register the callback, allowing modular and reusable design.
 
 #### **Usage**
-'''c
+```c
 #include "timer_module.h"
 
 void my_callback(void) {
@@ -378,7 +378,7 @@ int main(void) {
 
     while (1) {} // Main loop left empty – logic is interrupt-driven
 }
-'''
+```
 
 ### **Testing**
 Confirmed correct timing by toggling LEDs every 100ms.
@@ -396,10 +396,10 @@ All timer setup and ISR handling occurs in timer_module.c.
 Adds support to dynamically modify the periodic timer’s interval using set_period(). The timer period variable is private to the module and only accessible through get_period() and set_period() to ensure encapsulation and prevent direct modification from other files.
 
 #### **Usage**
-'''c 
+```c 
 set_period(500);    // Change blinking interval to 500ms
 uint32_t p = get_period();  // Retrieve the current interval
-'''
+```
 
 ### **Testing**
 Verified period can be changed at runtime without restarting the program.
@@ -414,13 +414,13 @@ Ensured the timer reconfigures cleanly and continues triggering callbacks at the
 Implements a one-shot timer using TIM3. This timer triggers a specified callback after a single delay (in milliseconds), then stops. It does not repeat. The function uses a second function pointer and dedicated hardware timer to isolate one-shot logic.
 
 #### **Usage**
-'''c
+```c
 void delayed_action(void) {
     // Code to run once after the delay
 }
 
 start_oneshot(4000, delayed_action); // Trigger after 4 seconds
-'''
+```
 
 ### **Testing**
 Used to pause LED blinking for 2 seconds after an initial 4-second delay.
