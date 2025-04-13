@@ -69,15 +69,68 @@ Note that the repository is not publically available, for reasons pertaining to 
 <details>
 <summary><strong>Task 1A</strong></summary>
 
-#### **Description**
-Insert description
+#### Description
+This module encapsulates the digital I/O functionality for controlling LEDs and handling button presses on the STM32F303 Discovery board. When initialized, it configures the button (PA0) to trigger an interrupt that toggles between lighting the upper half (PE12-PE15) and lower half (PE8-PE11) of the LEDs.
 
-#### **Usage**
-Insert how to use
+# Digital I/O Module
 
-### **Testing**
-Insert how module was tested
+#### Description
+This module makes it easy to control the LEDs and respond to button presses on the STM32F303 Discovery board. When you set it up, pressing the user button automatically toggles between lighting the top half and bottom half of the board's LEDs.
 
+#### Usage
+To use this module in your project:
+
+```c
+#include "dio.h"
+
+int main(void)
+{
+    // Set up the module
+    dio_init();
+    
+    // Start with the bottom half of LEDs lit
+    dio_set_led_state(0x0F);
+    
+    // Optional: add a 2-second delay between button responses
+    dio_set_led_rate(2000);
+
+    // Main loop - the button press interrupt handles everything
+    for(;;) {
+        // Your code can go here
+    }
+}
+```
+
+The module takes care of all the hardware setup behind the scenes. If you want to customize what happens when the button is pressed, you can provide your own function:
+
+```c
+dio_init(&button_pressed);
+
+// Your custom button handler
+void button_pressed(void)
+{
+    uint8_t current_state = dio_get_led_state();
+    
+    if ((current_state & 0xF0) == 0xF0) {
+        dio_set_led_state(0x0F);  // Switch to bottom half
+    } else {
+        dio_set_led_state(0xF0);  // Switch to top half
+    }
+}
+```
+
+#### Testing
+Here's how to check if everything is working:
+
+1. Load the program onto your STM32F303 Discovery board
+2. When it starts running, you should see the bottom half of the LEDs light up
+3. Press the blue user button on the board
+4. The top half of LEDs should now light up (and the bottom half should turn off)
+5. Press the button again and it should switch back
+
+If you set a rate limit (like the 2000ms example above), the board will ignore button presses that come too quickly. Try pressing the button rapidly to see this in action - the LEDs should only change state if you wait long enough between presses.
+
+To dig deeper into how it works, you can use the debugger to place a breakpoint where the button press is detected and watch the code respond when you press the button.
 
 
 
