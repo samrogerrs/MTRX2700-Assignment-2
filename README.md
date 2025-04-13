@@ -105,15 +105,39 @@ To check if everything is working:
 <details>
 <summary><strong>Task 1B</strong></summary>
 
-#### **Description**
-Insert description
+#### Description
+This module makes it easy to control the LEDs and respond to button presses on the STM32F303 Discovery board. When you set it up, pressing the user button automatically toggles between lighting the top half and bottom half of the board's LEDs. You can customize the button behavior by passing your own callback function.
 
-#### **Usage**
-Insert how to use
+#### Usage
+To use this module with a custom button handler:
+```c
+#include "dio.h"
 
-### **Testing**
-Insert how module was tested
+// Define what happens when button is pressed
+void button_pressed(void)
+{
+    dio_toggle_led_halves();
+}
 
+// Main function - loop
+int main(void)
+{
+    // Initialize digital I/O with callback
+    dio_init(&button_pressed);
+    
+    // Loop forever
+    for(;;) {
+    }
+}
+```
+
+#### Testing
+To check if everything is working:
+1. Load the program onto your STM32F303 Discovery board
+2. When it starts running, the bottom half of the LEDs should light up
+3. Press the blue user button on the board
+4. The top half of LEDs should now light up (and the bottom half should turn off)
+5. Press the button again and it should switch back
 </details>
 
 <details>
