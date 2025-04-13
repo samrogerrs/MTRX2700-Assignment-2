@@ -1,6 +1,6 @@
 
 # MTRX2700-Assignment-2 🤖
-## Group Number 3 - NAME
+## Group Number 3
 
 ### **Authors ✍️:**  
 - **Connor Stock**: 520466054  
@@ -405,7 +405,7 @@ If the buffers are not swapping, check if the flags are changing values. Load th
 
 </details>
 
-<details>
+</details>
 
 ---
 
