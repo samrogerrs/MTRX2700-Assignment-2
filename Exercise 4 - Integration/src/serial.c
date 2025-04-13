@@ -89,19 +89,19 @@ void SerialInitialise(uint32_t baudRate, SerialPort *serial_port, void (*complet
 	switch(baudRate){
 	case BAUD_9600:
 		// NEED TO FIX THIS !
-		*baud_rate_config = 0x46;  // 115200 at 8MHz
+		*baud_rate_config = 0x341;  // 115200 at 8MHz
 		break;
 	case BAUD_19200:
 		// NEED TO FIX THIS !
-		*baud_rate_config = 0x46;  // 115200 at 8MHz
+		*baud_rate_config = 0x1A1;  // 115200 at 8MHz
 		break;
 	case BAUD_38400:
 		// NEED TO FIX THIS !
-		*baud_rate_config = 0x46;  // 115200 at 8MHz
+		*baud_rate_config = 0xD0;  // 115200 at 8MHz
 		break;
 	case BAUD_57600:
 		// NEED TO FIX THIS !
-		*baud_rate_config = 0x46;  // 115200 at 8MHz
+		*baud_rate_config = 0x8B;  // 115200 at 8MHz
 		break;
 	case BAUD_115200:
 		*baud_rate_config = 0x46;  // 115200 at 8MHz
@@ -150,23 +150,39 @@ void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_
 
 void finished_receiving(uint8_t num_characters, char *received_string){
 
-	int init_byte = received_string[0];
+	uint8_t init_byte = received_string[0];
 	processing_flag = 0;
+
 	switch(received_string[0]){
 		case 's':
 			received_string += 7;
 			start_interrupt_transmission(&USART1_PORT, received_string, strlen(received_string));
 			break;
 		case 'l':
+
 			received_string += 4;
 			int mask = binary_to_int(received_string);
-			dio_init();
+			//dio_init();
 			dio_set_led_state(mask);
+
+			uint8_t *finished_op = "Finished task. Send new prompt!";
+			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+
 			break;
 		case 'o':
+			
+			//put timer function here
+			
+			uint8_t *finished_op = "Finished task. Send new prompt!";
+			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
 
 			break;
 		case 't':
+			
+			//put timer function here
+			
+			uint8_t *finished_op = "Finished task. Send new prompt!";
+			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
 
 			break;
 		default:
