@@ -91,19 +91,13 @@ int main(void)
 ```
 
 #### Testing
-Here's how to check if everything is working:
+To check if everything is working:
 
 1. Load the program onto your STM32F303 Discovery board
 2. When it starts running, you should see the bottom half of the LEDs light up
 3. Press the blue user button on the board
 4. The top half of LEDs should now light up (and the bottom half should turn off)
 5. Press the button again and it should switch back
-
-If you set a rate limit (like the 2000ms example above), the board will ignore button presses that come too quickly. Try pressing the button rapidly to see this in action - the LEDs should only change state if you wait long enough between presses.
-
-To dig deeper into how it works, you can use the debugger to place a breakpoint where the button press is detected and watch the code respond when you press the button.
-
-
 
 
 </details>
