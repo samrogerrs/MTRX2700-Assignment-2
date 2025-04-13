@@ -136,8 +136,8 @@ void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_
 
 	memcpy((void *)(tx_buffer+2), data, size);
 
-	tx_buffer[size] = '\r';
-	tx_buffer[size + 1] = '\n';
+	tx_buffer[size + 1] = '\r';
+	tx_buffer[size + 2] = '\n';
 	//tx_buffer[size] = '\0';
 	tx_length = size + 4;
 
