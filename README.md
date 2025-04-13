@@ -309,15 +309,12 @@ When SerialInputString is sent a message larger than 64 characters, it stores th
 
 When SerialInputString is sent non-alphanumeric characters such as '#', '%', '\r' '\n', in the centre of the message, it can handle the single character cases, however, be warned it will store '\n' as '\''n'. Therefore newline, carriage return and null-termination characters should be appended on a string once received to be further processed (e.g. with string.h functions such as strlen). 
 
-Whitespace
+SerialInputString can handle whitespace, even empty buffer of just spaces. However, because it stops storing into the buffer once '\r' is detected, sending just \r does not store anything into the buffer. If two carriage returns are typed, it still stores nothing. It has also been tested for a long delay (thirty seconds between typing two letters) as well as a short delay (holding down a key to type the same letter very quickly); both appear to have no impact on the string being stored. However, longer delays should be tested before being used to ensure there are no timeouts or other issues encountered. 
 
-Empty string
-carriage return only
-two carriage returns
-long delay whilst typing
+The received string can be easily accessed by pasting the hexadecimal memory address into the STM32 interface memory browser. The full string should appear unless the inputted string exceeds 63 characters (last buffer character is reserved for carriage return). 
 
+<details>
 
-</details>
 <details>
 <summary><strong>Task 2.3.2B</strong></summary>
 
@@ -331,6 +328,7 @@ The callback function is initialised during SerialInitialise, enabling it to be 
 On initialising the UART with the finished_receiving function, stepping through the debugger can demonstrate it being called in the last line of SerialInputString. Equally, the finished_transmitting function can be debugged that way to ensure the completion function is being called correctly. However, one limitation of initialising the completion function as part of the UART struct is that the SerialInputString and SerialOutputString cannot be used without re-initialising the board, as only one completion function is linked at a time. 
 
 </details>
+
 </details>
 <summary><strong>Task 2.3.2C</strong></summary>
 
@@ -352,9 +350,21 @@ int main(void) {
 ```
 
 ### **Testing**
+Exceeding buffer length: 
+
+Whitespace:
+
+Carriage Return Only (empty string):
+
+Double Carriage Return:
+
+Delay (1 minute between letters):
+
+Quick input (holding down a key to send letters as fast as possible):
 
 <details>
-</details>
+	
+<details>
 <summary><strong>Task 2.3.2D</strong></summary>
 
 ### **Description**
@@ -380,34 +390,8 @@ int main(void) {
 
 
 <details>
-<summary><strong>Task 2C</strong></summary>
-
-#### **Description**
-Insert description
-
-#### **Usage**
-Insert how to use
-
-### **Testing**
-Insert how module was tested
-
-</details>
 
 <details>
-<summary><strong>Task 2D</strong></summary>
-
-#### **Description**
-Insert description
-
-#### **Usage**
-Insert how to use
-
-### **Testing**
-Insert how module was tested
-
-</details>
-
-</details>
 
 ---
 
