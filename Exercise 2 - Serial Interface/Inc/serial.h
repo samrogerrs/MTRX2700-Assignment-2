@@ -4,14 +4,13 @@
 
 #include <stdint.h>
 
-// Defining the serial port struct, the definition is hidden in the
-// c file as no one really needs to know this.
+// Defining the serial port struct
 struct _SerialPort;
 typedef struct _SerialPort SerialPort;
 
 
-// make any number of instances of the serial port (they are extern because
-//   they are fixed, unique values)
+// USART1 serial port instance
+// Must be external for main to access it
 extern SerialPort USART1_PORT;
 
 //Ability of user to change buffer size
@@ -19,14 +18,12 @@ extern SerialPort USART1_PORT;
 #define TX_BUFFER_SIZE 64
 
 //Ability of user to modify buffers in main
+//Enables user to request latest data without using completion function
 extern volatile uint8_t tx_buffer[TX_BUFFER_SIZE];
 extern volatile uint8_t buffer1[RX_BUFFER_SIZE];
 extern volatile uint8_t buffer2[RX_BUFFER_SIZE];
 
-
-
-
-// The user might want to select the baud rate
+// Baud Rate Selection
 enum {
   BAUD_9600,
   BAUD_19200,
@@ -35,12 +32,9 @@ enum {
   BAUD_115200
 };
 
-
- 
 // SerialInitialise - initialise the serial port
 // Input: baud rate as defined in the enum
 void SerialInitialise(uint32_t baudRate, SerialPort *serial_port, void (*completion_function)(uint32_t, char *) );
-
 
 //USART1_EXTI25_IRQHandler - function called in receiving interrupt
 //Stores received byte into buffer
@@ -61,7 +55,7 @@ void finished_transmission(uint32_t bytes_sent, char *sent_string);
 void finished_receiving(uint8_t num_characters, char *received_string);
 
 // SerialOutputChar - output a char to the serial port
-//  note: this version waits until the port is ready (not using interrupts)
+//  note: this version polls (not using interrupts)
 // Input: char to be transferred
 void SerialOutputChar(uint8_t, SerialPort *serial_port);
  
@@ -73,7 +67,8 @@ void SerialOutputString(uint8_t *pt, SerialPort *serial_port);
 // SerialInputChar - input a character from serial port RDR
 void SerialInputChar(uint8_t *data, SerialPort *serial_port);
 
-// SerialInputString - inputs a string until '!' character is sent from serial port
+// SerialInputString - inputs a string until '/r' character is sent from serial port
+// Polling function, not interrupt
 void SerialInputString(uint8_t buffer_size, SerialPort *serial_port, char *buffer);
 
 
