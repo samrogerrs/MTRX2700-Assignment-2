@@ -362,11 +362,18 @@ Whitespace: Stores into buffer with no issue, as long as the whitespace does not
 
 Carriage Return Only (empty string): The carriage return does store in the buffer, as all data is stored before it is checked against the carriage return character to terminate taking in data. This can be seen by going into the memory browser and seeing the hex 0x0D character. 
 
-Double Carriage Return: Unlike during polling, where the carriage return terminates reading from RDR until the function is called again, typing a double carriage return stores them both into the buffer. However, since the receiving buffer index is reset to zero after each string is sent, only one carriage return appears in the buffer after the two have been typed (can check the first one really does store by pausing the code and looking at the memory browser between them). 
+Double Carriage Return: Unlike during polling, where the carriage return terminates reading from RDR until the function is called again, typing a double carriage return stores them both into the buffer. However, since the receiving buffer index is reset to zero after each string is sent, only one carriage return appears in the buffer after the two have been typed (can check the first one really does store by pausing the code and looking at the memory browser between them) as it overwrites the first. 
 
 Delay (1 minute between letters): Stores with no issue
 
 Quick input (holding down a key to send letters as fast as possible): Stores with no issue
+
+Debugging:
+Some typical issue that might be encountered include some data being lost (particularly end of string) or the data not being stored into the buffer correctly. For the former, check that when the null termination character is appended, it isn't overwriting the last letter of the string. If your string is over 63 bytes you can expect data to cut off there. 
+
+If no data is being stored into the buffer, check the definition of the handler function is identical to the one defined in stm32f303xc.h. Set a breakpoint at the start of the handler to check the interrupt is being triggered. If the function definition is correct but the handler still isn't being trigger, the issue is probably with the enable_USART1_interrupt function - ensure correct priority is set and interrupt is correctly enabled. 
+
+If data is writing into the middle of the buffer instead of the start, ensure the receiving index is set to zero following the carriage return being sent or following the buffer overflow case. If only one byte is being stored, ensure the index is incrementing after each byte is stored. If the function is missing characters, something is likely interfering with receiving; ensure nothing is being transmitted at the same time or this could lead to jumbled data. 
 
 </details>
 	
@@ -395,6 +402,11 @@ int main(void) {
 ```
 
 ### **Testing**
+
+Buffer Overflow: In the case of an overflow, the overflow triggers a check of the processing and trasnmitting flags so that it can be sent immediately to be processed. It should be noted that anything after the 63 characters is lost, as the new active buffer is cleared to receive new input and the buffer swap can only occur if both active and processing are ready. 
+
+Multiple Buffer Overlows: The buffers will swap as per usual, storing the first 63 characters of each string and discarding the rest of the information. 
+
 Whitespace: Stores without issue
 
 Sending data quickly (holding down key to type very fast): Stores without issue
@@ -403,7 +415,10 @@ Carriage return only: Stores into the buffer as expected.
 
 Double carriage return: Stores one into the first buffer, and one into the second as expected. The first carriage return triggers a check of the flags and then swaps the buffers. The second carriage return will repeat the process. 
 
-Change of Buffers - do they actually swap?: Buffers appear to swap when both are ready. This can be checked by loading the memory browser and looking at buffer1 and buffer2. The first input string stores in buffer1, the second stores in buffer2. The third string overwrites the first and stores in buffer1 again as intended. 
+Change of Buffers - do they actually swap?: 
+A good way to test this is to first comment out the memset line that clears the new active buffer so it can receive data that is shorter than the old message it might have received. Pause after sending the first string - it should be in buffer1. Then pause after second string - it should be in buffer2. When a third string is sent it should overwrite the first string. 
+
+Once memset is uncommented, you should have the effect of after the first string is sent, it stores into buffer1, and buffer2 is empty. When the next string is sent, you'll find that it is stored in buffer2 AND that the string in buffer1 has been erased, as the memset function has cleared it so it can be the new active buffer. 
 
 Debugging:
 If the received strings are not appearing in either of the buffers, it is likely an error either with the USART initialisation, or the pointer to the buffers being initialised incorrectly. Use breakpoints to check if the interrupt handler function is being triggered when data is typed into PuTTy or Cutecom; if it is, the buffers are likely the issue. If it isn't, the user should check they have the correct handler name, and that they have initialised the interrupt correctly. 
