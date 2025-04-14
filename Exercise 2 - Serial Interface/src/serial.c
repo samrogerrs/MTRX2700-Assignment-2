@@ -4,6 +4,8 @@
 
 //Transmitting buffer
 volatile uint8_t tx_buffer[TX_BUFFER_SIZE];
+volatile uint8_t tx_index = 0;
+volatile uint8_t tx_length = 0;
 
 //Buffers for double buffer interrupt function
 volatile uint8_t buffer1[RX_BUFFER_SIZE];
@@ -80,35 +82,46 @@ void SerialInitialise(uint32_t baudRate, SerialPort *serial_port, void (*complet
 	// Baud rates to select
 	switch(baudRate){
 	case BAUD_9600:
-		*baud_rate_config = 0x46;  // 115200 at 8MHz
+		*baud_rate_config = 0x341;  // 9600 at 8MHz
 		break;
 	case BAUD_19200:
-		*baud_rate_config = 0x46;  // 115200 at 8MHz
+		*baud_rate_config = 0x1A1;  // 19200 at 8MHz
 		break;
 	case BAUD_38400:
-		*baud_rate_config = 0x46;  // 115200 at 8MHz
+		*baud_rate_config = 0xD0;  // 38400 at 8MHz
 		break;
 	case BAUD_57600:
-		*baud_rate_config = 0x46;  // 115200 at 8MHz
+		*baud_rate_config = 0x8B;  // 57600 at 8MHz
 		break;
 	case BAUD_115200:
 		*baud_rate_config = 0x46;  // 115200 at 8MHz
 		break;
 	}
-
 	// enable serial port for tx and rx
 	serial_port->UART->CR1 |= USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
 }
 
 //Function to transmit a byte into the TDR to trigger a transmission interrupt
-void start_interrupt_tranmission(SerialPort *serial_port, uint8_t *data, uint8_t size){
-	
-	//Copy the data into the transmission buffer
-	memcpy(tx_buffer, data, size);
-	serial_port->UART->TDR = tx_buffer[0];
-	
-	//enable transmission interrupt
+void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_t size){
+
+	if (transmitting || size == 0) return;
+
+	transmitting = 1;
+
+	memset((void *)tx_buffer, 0, TX_BUFFER_SIZE);
+	tx_buffer[0] = '\r';
+	tx_buffer[1] = '\n';
+
+	memcpy((void *)(tx_buffer+2), data, size);
+
+	tx_buffer[size + 1] = '\r';
+	tx_buffer[size + 2] = '\n';
+	tx_length = size + 4;
+
+	tx_index = 0;
+	serial_port->UART->TDR = tx_buffer[tx_index];
 	USART1->CR1 |= USART_CR1_TXEIE;
+
 }
 
 //Transmission completion function. Short delay to prevent other operations happening too quickly afterwards
