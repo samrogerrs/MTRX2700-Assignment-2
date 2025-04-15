@@ -194,60 +194,61 @@ void SerialOutputString(uint8_t *pt, SerialPort *serial_port) {
 //Function triggered automatically for receiving data, trigerred manually for transmitting via start_interrupt_transmission
 void USART1_EXTI25_IRQHandler(void){
 
-	//Handling receiving interrupts
 	if (USART1_PORT.UART->ISR & USART_ISR_RXNE){
 
 		static uint8_t rx_index = 0;
+		uint8_t *overflow_error = "Message too long! Send a shorter string!";
 		char received_byte = USART1_PORT.UART->RDR;
 
-		// If buffer not full, store byte
-		if(rx_index < RX_BUFFER_SIZE -1){
+		// Store byte into active buffer if not filled
+
+		if(rx_index < RX_BUFFER_SIZE -2){
 			active_buffer[rx_index] = received_byte;
 			rx_index++;
 		}
 
-		// If buffer full or carriage return received:
-		if (received_byte == '\r' || rx_index >= RX_BUFFER_SIZE - 1) {
-			
-			//Null-terminate string so string.h can be used
-			active_buffer[rx_index] = '\0';  
+		// Check if buffer swap ready
+		if (received_byte == '\r' /*|| rx_index >= RX_BUFFER_SIZE-1*/){
 
-			//Check if processing buffer is ready, and there is no data currently being transmitted
-			if(processing_flag == 1 && transmitting == 0){
+			active_buffer[rx_index] = '\0';  			// Needs \0 for strlen function
 
-				//If ready, swap buffers
+			if(processing_flag == 1 && transmitting == 0){		// Check both buffers
+
+				//Swap buffers
 				volatile uint8_t * temp = active_buffer;
 				active_buffer = processing_buffer;
 				processing_buffer = temp;
 
-				//Clear index, clear processing flag, clear buffer that will now receive new data
+				//Store length of received string
 				uint8_t length = rx_index;
 				rx_index = 0;
-				memset((void*)active_buffer, 0, RX_BUFFER_SIZE);
-				processing_flag = 0;
 
-				//Initiate completion function for data processing
+				//reset flags and send buffer to process
+				processing_flag = 0;
 				USART1_PORT.completion_function(length, processing_buffer);
 			}
+			//Discard received string if still processing other buffer
 			else{
-				//If processing flag not ready, discared data and clear buffer
 				rx_index = 0;
-				memset((void*)active_buffer, 0, RX_BUFFER_SIZE);
 			}
+		}
+
+		if(rx_index >= RX_BUFFER_SIZE -2){
+			start_interrupt_transmission(&USART1_PORT, overflow_error, strlen(overflow_error));
+			rx_index = 0;
+			memset((void*)active_buffer, 0, RX_BUFFER_SIZE);
 		}
 
 	}
 
-	//Transmission interrupt handling
 	if (USART1_PORT.UART->ISR & USART_ISR_TXE){
-		
-		//Send data until end of string length is reached
-		if (tx_index < tx_length) {
-			USART1_PORT.UART->TDR = tx_buffer[tx_index+1];
+
+		if(tx_index < tx_length){
+			USART1_PORT.UART->TDR = tx_buffer[tx_index + 1];
 			tx_index++;
 		}
-		//Clear all transmission flags and indexes
-		else{
+		else {
+			//reset flags and disable transmission
 			tx_index = 0;
 			tx_length = 0;
 			transmitting = 0;
@@ -256,41 +257,6 @@ void USART1_EXTI25_IRQHandler(void){
 	}
 
 }
-
-/*
-// Interrupt handler for Part 2.3.2c - Interrupt Handler Receiving only
-//Function uses active_buffer only as double buffer implentation not accounted for
-void USART1_EXTI25_IRQHandler(void){
-
-	// Check data in RDR register
-	if (USART1_PORT.UART->ISR & USART_ISR_RXNE){
-
-		static uint8_t rx_index = 0;
-		char received_byte = USART1_PORT.UART->RDR;
-
-		// Store byte into active buffer if not filled
-		if(rx_index < RX_BUFFER_SIZE -1){
-			active_buffer[rx_index] = received_byte;
-			rx_index++;
-		}
-  
-  		//If buffer full, append with null termination character for processing
-		else{
-			active_buffer[rx_index] = '\0';
-			USART1_PORT.completion_function(rx_index, active_buffer);
-			rx_index = 0;
-		}
-
-		// Check if terminating character is received, if so start completion function to process
-		if(received_byte == '\r'){
-
-			USART1_PORT.completion_function(rx_index, active_buffer);
-			rx_index = 0;
-		}
-
-	}
-}
-*/
 
 //Function to enable USART1 interrupts
 void enable_USART_interrupt() {
