@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+// dio.c
+// this is a digital i/o module that handles leds and buttons
+// manages led state with rate limiting to prevent rapid changes
+
+
 // Initialise digital I/O (LEDs and button interrupt)
 void dio_init(void);
 
