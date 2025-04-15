@@ -1,5 +1,6 @@
 #include "serial.h"
 #include "stm32f303xc.h"
+#include "string.h"
 
 
 //Transmitting buffer
@@ -133,39 +134,6 @@ void finished_transmission(uint32_t bytes_sent, char *sent_string) {
 	}
 }
 
-//Receiving completion function to process data
-void finished_receiving(uint8_t num_characters, char *received_string){
-
-	//Disable processing flag whilst data being parsed
-	uint8_t init_byte = received_string[0];
-	processing_flag = 0;
-
-	//Transmit completion message after task has finished
-	uint8_t *finished_op = "Finished task. Send new prompt!";
-
-	switch(received_string[0]){
-		case 's':
-			//do something here
-			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
-			break;
-		case 'l':
-			//do something here
-			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
-			break;
-		case 't':
-			//do something here
-			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
-			break;
-		case 'o':
-			//do something here
-			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
-			break;
-	}
-
-	//enable processing falg
-	processing_flag = 1;
-}
-
 //Function to transmit a byte via polling method, called in SerialOutputString
 void SerialOutputChar(uint8_t data, SerialPort *serial_port) {
 
@@ -187,6 +155,17 @@ void SerialOutputString(uint8_t *pt, SerialPort *serial_port) {
 	}
 
 	serial_port->completion_function(counter, (char *)start_string);
+}
+
+//Receiving completion function to process data
+void finished_receiving(uint8_t num_characters, char *received_string){
+
+	//do tasks here!
+
+	//Transmit completion message after task has finished
+	uint8_t *finished_op = "Finished task. Send new prompt!";
+	start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+
 }
 
 //Double buffer interrupt handler for receiving and transmitting data via interrupt
