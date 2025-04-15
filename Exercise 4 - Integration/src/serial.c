@@ -220,7 +220,7 @@ void USART1_EXTI25_IRQHandler(void){
 	if (USART1_PORT.UART->ISR & USART_ISR_RXNE){
 
 		static uint8_t rx_index = 0;
-		uint8_t *overflow_error = "Message too long! Send a shorter string!";
+		uint8_t *overflow_error = "Message too long! Reset the STM and send a shorter string!";
 		char received_byte = USART1_PORT.UART->RDR;
 
 		// Store byte into active buffer if not filled
