@@ -16,6 +16,32 @@
  ******************************************************************************
  */
 
+
+/*
+THIS IS THE MAIN RUN FILE FOR MTRX1702 LAB 2. BELOW IS A DESCRIPTION:
+
+The code takes in input via the serial communication to perform four different operations. 
+If an invalid input is sent, the code will respond with an error message and ask the user to try again.
+
+If provided with the input "serial " the will be transmitted back via the transmitting interrupt module onto the interface (PuTTy or Cutecom). 
+It is designed to send the message back framed as \r\n\r\n such that it will start on a new line underneath the input, 
+and a new input can commence underneath the returned message to prevent the interface overwriting.
+
+If provided with the input "led <led_pattern>, the LEDs on the microcontroller will be lit up accoding to the specified pattern. 
+For example, "led 10101010" would turn on every second LED whilst "led 11110000" would turn on the first four.
+
+If provided with the input "timer ", the LEDs will begin to flash on an off as specified by the number of milliseconds provided. 
+For example, the input "timer 1000" will turn the current LED pattern on and off at intervals of 1000 milliseconds.
+
+If provided with the input "oneshot ", the set LED pattern currently on the microcontrollers will invert 
+(but will not stop the flashing if a previous timer command is called). For instance, if provided with 
+"oneshot 500" as the input, if the current LED pattern is 10101010, after 500 milliseconds it will inver 
+to 01010101, and then continue flashing if a previous timer function has been called. If no previous timer 
+function has been called, such that the LEDs are all off, it will simply turn them all on.
+
+*/
+
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
