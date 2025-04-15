@@ -2,6 +2,24 @@
 #include "stm32f303xc.h"
 #include <stdbool.h>
 
+/* header
+ * This module sets two timers using TIM3 and TIM4 on the STM32F303:
+ *
+ * - TIM3 does the repetitive stuff
+ * - TIM4 handles oneshot
+ *
+ * functionality:
+ *   - Start a periodic timer with a callback
+ *   - change the period anytime
+ *   - set a one-shot delay callback
+ *   - Check what period you're running at
+ *
+ * Internally:
+ *   - TIM3 and TIM4 both run off 1ms resolution (using 8kHz prescaler @ 8MHz)
+ *
+*/
+
+
 // --- Internal module state ---
 static void (*timer_callback)(void) = 0;       // Callback for periodic timer (TIM3)
 static void (*oneshot_callback)(void) = 0;     // Callback for one-shot timer (TIM4)
