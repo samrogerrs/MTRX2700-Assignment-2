@@ -7,14 +7,15 @@
 #include "stm32f303xc.h"
 #include <stdbool.h>
 
-// internal led stuff
+// internal led state and blinking control
 static uint8_t led_state = 0;          // current led state
-static uint8_t blink_mask = 0;
+static uint8_t blink_mask = 0;         // mask for blinking leds
 static uint32_t led_rate_ms = 100;     // default cooldown time (100ms)
-static bool blinking_active = false;
-static bool toggle_flag = false;
+static bool blinking_active = false;   // flag for blinking mode
+static bool toggle_flag = false;       // toggles between on/off state during blinking
 
-// handles button press interrupts
+// interrupt handler for button press (pa0)
+// disables further interrupts, clears pending flag, and starts timer
 void EXTI0_IRQHandler(void)
 {
     EXTI->IMR &= ~EXTI_IMR_MR0;
@@ -23,7 +24,8 @@ void EXTI0_IRQHandler(void)
     TIM2->CR1 |= TIM_CR1_CEN;
 }
 
-// TIM2 IRQ Handler for led rate limiting
+// timer2 interrupt handler
+// re-enables exti interrupt and stops the timer
 void TIM2_IRQHandler(void)
 {
     TIM2->CR1 &= ~TIM_CR1_CEN;
@@ -31,22 +33,25 @@ void TIM2_IRQHandler(void)
     EXTI->IMR |= EXTI_IMR_MR0;
 }
 
+// enables peripheral clocks for gpio and timer2
 static void enable_clocks(void)
 {
     RCC->AHBENR |= RCC_AHBENR_GPIOAEN | RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOEEN;
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
 }
 
+// sets gpioe pins 8-15 as outputs for leds
 static void initialise_board(void)
 {
     uint16_t *led_output_registers = ((uint16_t *)&(GPIOE->MODER)) + 1;
     *led_output_registers = 0x5555;
 }
 
+// configures timer2 for delay-based rate limiting
 static void configure_timer(void)
 {
     __disable_irq();
-    TIM2->PSC = 7999;
+    TIM2->PSC = 7999;                  // 1ms tick with 8mhz / 8000
     TIM2->ARR = led_rate_ms;
     TIM2->DIER |= TIM_DIER_UIE;
     NVIC_SetPriority(TIM2_IRQn, 1);
@@ -55,6 +60,7 @@ static void configure_timer(void)
     __enable_irq();
 }
 
+// configures exti0 (pa0) for button press with rising edge trigger
 static void enable_interrupt(void)
 {
     __disable_irq();
@@ -67,6 +73,7 @@ static void enable_interrupt(void)
     __enable_irq();
 }
 
+// initializes dio module: clocks, gpio, timer, interrupt, and sets leds off
 void dio_init(void)
 {
     enable_clocks();
@@ -78,11 +85,13 @@ void dio_init(void)
     *led_register = led_state;
 }
 
+// returns the current led state (8-bit mask)
 uint8_t dio_get_led_state(void)
 {
     return led_state;
 }
 
+// sets the led state and resets the timer for rate limiting
 void dio_set_led_state(uint8_t state)
 {
     led_state = state;
@@ -97,24 +106,28 @@ void dio_set_led_state(uint8_t state)
     TIM2->CR1 |= TIM_CR1_CEN;
 }
 
+// sets the minimum time between led changes (rate limit) in milliseconds
 void dio_set_led_rate(uint32_t rate_ms)
 {
     led_rate_ms = (rate_ms < 1) ? 1 : rate_ms;
     TIM2->ARR = led_rate_ms - 1;
 }
 
+// starts blinking mode — actual toggle happens in dio_toggle_leds()
 void dio_start_blinking(void)
 {
     blinking_active = true;
-    toggle_flag = false;  // Start from OFF
-    // Do NOT call dio_toggle_leds() immediately
+    toggle_flag = false;  // start from off
 }
 
+// stops blinking mode
 void dio_stop_blinking(void)
 {
     blinking_active = false;
 }
 
+// toggles led state based on blinking flag
+// alternates between off and stored blink_mask
 void dio_toggle_leds(void)
 {
     if (!blinking_active) return;
@@ -128,6 +141,8 @@ void dio_toggle_leds(void)
     toggle_flag = !toggle_flag;
 }
 
+// inverts current led state
+// if blinking is active, inverts blink mask instead
 void dio_invert_leds(void)
 {
     if (blinking_active) {
@@ -139,6 +154,7 @@ void dio_invert_leds(void)
     }
 }
 
+// updates the blink mask based on current led state (used if state changed externally)
 void dio_update_blink_mask_if_active(void)
 {
     if (blinking_active) {
