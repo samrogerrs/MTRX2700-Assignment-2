@@ -147,56 +147,50 @@ void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_
 
 }
 
-void finished_receiving(uint8_t num_characters, char *received_string) {
-    uint8_t init_byte = received_string[0];
+void finished_receiving(uint8_t num_characters, char *received_string){
     processing_flag = 0;
 
-    uint8_t *finished_op = "Finished task. Send new prompt";
+    uint8_t *finished_op = "Finished task. Send new prompt!";
 
-    char* cmd = strtok(received_string, " ");
-
-    if (cmd == NULL) {
-        uint8_t *error_message = "Invalid string entered. Please try again\r\n";
-        start_interrupt_transmission(&USART1_PORT, (uint8_t *)error_message, strlen(error_message));
-	}
-
-    else if (strcmp(cmd, "serial") == 0) {
-        char* serial_data = strtok(NULL, " ");
-        start_interrupt_transmission(&USART1_PORT, serial_data, strlen(serial_data));
+    if (strncmp(received_string, "serial ", 7) == 0) {
+        received_string += 7;
+        start_interrupt_transmission(&USART1_PORT, received_string, strlen(received_string));
     }
+    else if (strncmp(received_string, "led ", 4) == 0) {
+        received_string += 4;
 
-    else if (strcmp(cmd, "led") == 0) {
-        char* led_param = received_string + strlen("led ");
-        int mask = binary_to_int(led_param);
+        // Remove trailing newline characters
+        char *newline = strchr(received_string, '\r');
+        if (newline) *newline = '\0';
+
+        int mask = binary_to_int(received_string);
         dio_set_led_state(mask);
 
         start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
     }
-
-    else if (strcmp(cmd, "oneshot") == 0) {
-        char* delay_str = strtok(NULL, " ");
-        uint32_t delay = atoi(delay_str);
-
+    else if (strncmp(received_string, "oneshot ", 8) == 0) {
+        received_string += 8;
+        uint32_t delay = atoi(received_string);
         start_oneshot(delay, dio_invert_leds);
+
         start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
     }
-
-    else if (strcmp(cmd, "timer") == 0) {
-        char* period_str = strtok(NULL, " ");
-        uint32_t period = atoi(period_str);
-
+    else if (strncmp(received_string, "timer ", 6) == 0) {
+        received_string += 6;
+        uint32_t period = atoi(received_string);
         dio_start_blinking();
         timer_init(period, dio_toggle_leds);
+
         start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
     }
-
     else {
-        uint8_t *error_message = "Invalid string entered. Please try again\r\n";
+        uint8_t *error_message = "Invalid string entered. Please try again!\r\n";
         start_interrupt_transmission(&USART1_PORT, (uint8_t *)error_message, strlen(error_message));
     }
 
     processing_flag = 1;
 }
+
 
 
 
@@ -226,19 +220,20 @@ void USART1_EXTI25_IRQHandler(void){
 	if (USART1_PORT.UART->ISR & USART_ISR_RXNE){
 
 		static uint8_t rx_index = 0;
+		uint8_t *overflow_error = "Message too long! Send a shorter string!";
 		char received_byte = USART1_PORT.UART->RDR;
 
 		// Store byte into active buffer if not filled
-		if(rx_index < RX_BUFFER_SIZE -1){
+
+		if(rx_index < RX_BUFFER_SIZE -2){
 			active_buffer[rx_index] = received_byte;
 			rx_index++;
 		}
 
 		// Check if buffer swap ready
-		if (received_byte == '\r' || rx_index >= RX_BUFFER_SIZE-1){
+		if (received_byte == '\r'){
 
 			active_buffer[rx_index] = '\0';  			// Needs \0 for strlen function
-
 			if(processing_flag == 1 && transmitting == 0){		// Check both buffers
 
 				//Swap buffers
@@ -259,6 +254,12 @@ void USART1_EXTI25_IRQHandler(void){
 				rx_index = 0;
 			}
 		}
+		//Handle buffer overflow - send error message, reset buffer
+		if(rx_index >= RX_BUFFER_SIZE -2){
+			start_interrupt_transmission(&USART1_PORT, overflow_error, strlen(overflow_error));
+			rx_index = 0;
+			memset((void*)active_buffer, 0, RX_BUFFER_SIZE);
+		}
 
 	}
 
@@ -278,6 +279,7 @@ void USART1_EXTI25_IRQHandler(void){
 	}
 
 }
+
 
 
 void enable_USART_interrupt() {
