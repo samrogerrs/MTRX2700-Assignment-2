@@ -99,7 +99,7 @@ void TIM3_IRQHandler(void) {
         // OPTIONAL: Debug blink still useful
         GPIOE->ODR ^= 0x0100;
 
-        // ✅ Actually trigger the blinking logic
+        // Actually trigger the blinking logic
         if (timer_callback) timer_callback();
     }
 }
