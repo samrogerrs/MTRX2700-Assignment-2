@@ -5,6 +5,22 @@
 #include "stm32f303xc.h"
 #include "bin2int.h"
 
+
+/*
+* this module uses USART1 on
+ * It supports interrupt-driven transmission 
+ * and double-buffered reception, allowing non-blocking data handling. 
+ * The received commands trigger LED operations or timer-based tasks.
+ 
+ * Key Features:
+ * - double buffer implementation for USART reception
+ * - interrupt-driven data transmission
+ * - dynamic command parsing and execution ("led", "timer", "oneshot")
+ * - optional completion callback after data transmission
+
+*/
+
+
 //transmitting buffer
 volatile uint8_t tx_buffer[TX_BUFFER_SIZE];
 volatile uint8_t tx_index = 0;
