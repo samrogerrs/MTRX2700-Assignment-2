@@ -403,9 +403,9 @@ int main(void) {
 
 ### **Testing**
 
-Buffer Overflow: In the case of an overflow, the overflow triggers a check of the processing and trasnmitting flags so that it can be sent immediately to be processed. It should be noted that anything after the 63 characters is lost, as the new active buffer is cleared to receive new input and the buffer swap can only occur if both active and processing are ready. 
+Buffer Overflow: Our code prevents buffer overflow rather than instigating something like a wrap-around (which might jumble the data and lead to an invalid message anyway). If buffer overflow occurs it assumes the message was invalid, and transmits back a message to send a shorter string. It then resets the buffer index and clears the buffer so that new information can be received. As such, only valid inputs will be stored and processed. 
 
-Multiple Buffer Overlows: The buffers will swap as per usual, storing the first 63 characters of each string and discarding the rest of the information. 
+Multiple Buffer Overlows: No information is swapped into the processing buffer, as it clears the invalid input each time and sends an automatice error message each time.  
 
 Whitespace: Stores without issue
 
@@ -526,7 +526,7 @@ If provided with the input "led <led_pattern>, the LEDs on the microcontroller w
 
 If provided with the input "timer <number>", the LEDs will begin to flash on an off as specified by the number of milliseconds provided. For example, the input "timer 1000" will turn the current LED pattern on and off at intervals of 1000 milliseconds. 
 
-If provuded with the input "oneshot <number>", the set LED pattern currently on the microcontrollers will invert (but will not stop the flashing if a previous timer command is called). For instance, if provided with "oneshot 500" as the input, if the current LED pattern is 10101010, after 500 milliseconds it will inver to 01010101, and then continue flashing if a previous timer function has been called. If no previous timer function has been called, such that the LEDs are all off, it will simply turn them all on. 
+If provided with the input "oneshot <number>", the set LED pattern currently on the microcontrollers will invert (but will not stop the flashing if a previous timer command is called). For instance, if provided with "oneshot 500" as the input, if the current LED pattern is 10101010, after 500 milliseconds it will inver to 01010101, and then continue flashing if a previous timer function has been called. If no previous timer function has been called, such that the LEDs are all off, it will simply turn them all on. 
 
 #### **Usage**
 To run the integrated code, the serial communication UART (USART1 for this code) must be initialised, alongside enabling all required interrupts for serial input, serial transmission, timers, clocks and LEDs. This can be done by calling the following functions in main:
@@ -551,7 +551,31 @@ int main(void) {
 ```
 
 ### **Testing**
-Insert how module was tested
+Overflow: The same double buffer implementation was used as in Exercise 2 - Serial Interface Part 2D. As such, the error message is successfully transmitted as soon as there is a buffer overflow, and resets the active_buffer to handle new incoming information, discarding the invalid message. New valid inputs after the overflow work as normal. 
+
+Serial input - just \r entered: stores into the buffer and is tansmittted back. That is, it will do a double line space as now there is \r\r\n being transmitted back. 
+
+Timer before Oneshot Input:
+
+Oneshot before Timer Input:
+
+Calling oneshot function before LED input has been set:
+
+Calling timer function before LED input has been set:
+
+More than 8 numbers entered for LED call:
+As long as there are no inputs other than 1s and 0s, if the first 8 led string characters are valid the remaining input is discarded (that is, the extra characters). For example, if the input is: "led 111100001111" just the first four LED lights turn on as expected, with the additional 1111 being discarded. 
+
+Less than 8 numbers entered for LED call:
+As long as the inputs are 0s and 1s, the pattern will set for the number of inputs entered. For example, if "led 001" is inputted, the first three leds will be set. The rest of the LEDs will turn off, and will not remain in their previous state.  
+
+Different numbers than 1 and 0 in LED call:
+The binary to integer function operates in a while loop until a character that is not 0 or 1 is detected. As such, if the input was, "Led a0010101" no LEDs would turn on. However, if the input is "led 1010a011" the two LEDs preceeding the non-valid character would still operate, turning on. As such, the pattern of led input is valid until a corrupting character is encountered, with the LEDs succeeding the invalid character will not be set and will return to default (off). 
+
+Debugging:
+If the serial input has a message transmitting back, but incorrectly, check first that the pointer to the string is in the correct position in the finished_receiving function. If it is, the issue will probably be through the interrupt handler, which can be confirmed by checking the memory browser to see what is stored in each buffer. Ensure rx_index is not setting to zero in strange places and is incrementing correctly. 
+
+
 
 
 </details>
