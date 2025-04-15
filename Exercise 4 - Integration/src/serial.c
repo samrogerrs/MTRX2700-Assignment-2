@@ -147,55 +147,57 @@ void start_interrupt_transmission(SerialPort *serial_port, uint8_t *data, uint8_
 
 }
 
-void finished_receiving(uint8_t num_characters, char *received_string){
+void finished_receiving(uint8_t num_characters, char *received_string) {
     uint8_t init_byte = received_string[0];
     processing_flag = 0;
 
-    uint8_t *finished_op = "Finished task. Send new prompt!";
+    uint8_t *finished_op = "Finished task. Send new prompt";
 
-    switch(received_string[0]){
-        case 's':
-            received_string += 7;
-            start_interrupt_transmission(&USART1_PORT, received_string, strlen(received_string));
-            break;
-        case 'l':
-        	received_string += 4;
+    char* cmd = strtok(received_string, " ");
 
-			// Remove trailing newline characters
-			char *newline = strchr(received_string, '\r');
-			if (newline) *newline = '\0';
+    if (cmd == NULL) {
+        uint8_t *error_message = "Invalid string entered. Please try again\r\n";
+        start_interrupt_transmission(&USART1_PORT, (uint8_t *)error_message, strlen(error_message));
+	}
 
-			int mask = binary_to_int(received_string);
-			dio_set_led_state(mask);
+    else if (strcmp(cmd, "serial") == 0) {
+        char* serial_data = strtok(NULL, " ");
+        start_interrupt_transmission(&USART1_PORT, serial_data, strlen(serial_data));
+    }
 
-			uint8_t *finished_op = "Finished task. Send new prompt!";
-			start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
-			break;
-        case 'o':
-        	while (*received_string != ' ' && *received_string != '\0') received_string++;
-			if (*received_string == ' ') received_string++;
+    else if (strcmp(cmd, "led") == 0) {
+        char* led_param = received_string + strlen("led ");
+        int mask = binary_to_int(led_param);
+        dio_set_led_state(mask);
 
-			uint32_t delay = atoi(received_string);
-			start_oneshot(delay, dio_invert_leds);  // direct callback
-            start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
-            break;
-        case 't':
-        	while (*received_string != ' ' && *received_string != '\0') received_string++;
-			if (*received_string == ' ') received_string++;
+        start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+    }
 
-			uint32_t period = atoi(received_string);
-			dio_start_blinking();
-			timer_init(period, dio_toggle_leds);
-            start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
-            break;
-        default:
-            uint8_t *error_message = "Invalid string entered. Please try again!\r\n";
-            start_interrupt_transmission(&USART1_PORT, (uint8_t *)error_message, strlen(error_message));
-            break;
+    else if (strcmp(cmd, "oneshot") == 0) {
+        char* delay_str = strtok(NULL, " ");
+        uint32_t delay = atoi(delay_str);
+
+        start_oneshot(delay, dio_invert_leds);
+        start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+    }
+
+    else if (strcmp(cmd, "timer") == 0) {
+        char* period_str = strtok(NULL, " ");
+        uint32_t period = atoi(period_str);
+
+        dio_start_blinking();
+        timer_init(period, dio_toggle_leds);
+        start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+    }
+
+    else {
+        uint8_t *error_message = "Invalid string entered. Please try again\r\n";
+        start_interrupt_transmission(&USART1_PORT, (uint8_t *)error_message, strlen(error_message));
     }
 
     processing_flag = 1;
 }
+
 
 
 void SerialOutputChar(uint8_t data, SerialPort *serial_port) {
