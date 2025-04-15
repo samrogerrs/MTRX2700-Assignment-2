@@ -34,11 +34,11 @@
 int main(void)
 {
 	//Part 2.3.2a - Transmission:
-	/*
-	SerialInitialise(BAUD_115200, &USART1_PORT, &finished_receiving);
+	
+	SerialInitialise(BAUD_115200, &USART1_PORT, &finished_transmission);
  
  	//Write a string to send:
-	uint8_t * string_to_send = "This is a string! \r\n";
+	uint8_t * string_to_send = "Transmission string test \r\n";
 
 	//Use transmission function to send it:
 	SerialOutputString(string_to_send, &USART1_PORT);
@@ -46,21 +46,13 @@ int main(void)
 
 	//Part 2.3.2a - Receiving
 	/*
- 	SerialInitialise(<BaudRate>, &<UART_PORT>, &<selected_completion_function>);
+ 	SerialInitialise(BAUD_115200, &USART1_PORT, &finished_receiving);
 
 	char buffer[BUFFER_SIZE];
 	SerialInputString(BUFFER_SIZE, &USART1_PORT, buffer);
 
 	for(;;);
  	*/
-
-	//Part 2.3.2d and 2.3.2c - Double buffer and receiving/transmitting interrupts
-	//In serial.c select which verion of interrupt handle should be used
- 	SerialInitialise(BAUD_115200, &USART1_PORT, &finished_receiving);
-	enable_USART_interrupt();
-
-	for(;;);
  	
-
 }
 
