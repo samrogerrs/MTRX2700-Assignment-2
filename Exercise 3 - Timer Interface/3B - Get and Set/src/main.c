@@ -22,24 +22,6 @@ void blink_leds() {
     GPIOE->ODR = (GPIOE->ODR & 0x00FF) | (led_state << 8);  // Write new state to PE8–PE15 only
 }
 
-// Completely stop blinking and turn off LEDs
-void all_leds_off() {
-    TIM2->DIER &= ~TIM_DIER_UIE;   // Disable TIM2 update interrupt (stops calling blink_leds)
-    TIM2->CR1 &= ~TIM_CR1_CEN;     // Disable TIM2 counter (stops the timer itself)
-    GPIOE->ODR &= 0x00FF;          // Clear upper byte: PE8–PE15 = OFF
-}
-
-// Temporarily pause blinking for a specified duration (in milliseconds)
-void temp_leds_off(uint32_t delay_ms) {
-    pause_timer(TIM2);                     // Pause TIM2 blinking
-    GPIOE->ODR &= 0x00FF;                  // Turn off LEDs immediately
-    pause_timer_for(TIM2, delay_ms);      // Resume blinking after `delay_ms` using TIM4 as one-shot
-}
-
-// This callback is passed to the one-shot timer (TIM3) — executes after 4 seconds
-void temp_leds_off_callback(void) {
-    temp_leds_off(2000);   // Pause blinking for 2 seconds
-}
 
 int main(void) {
     enable_clocks();          // Enable all required peripheral clocks
@@ -48,9 +30,9 @@ int main(void) {
     __enable_irq();           // Globally enable interrupts
 
     timer_init(100, blink_leds);              // Set up TIM2 with 1ms tick (via prescaler) and blink_leds callback
-    set_period(500);                          // Set period to 500ms (blinking interval)
+    set_period(1000);                          // Set period to 500ms (blinking interval)
 
-    start_oneshot(4000, temp_leds_off_callback);  // After 4 seconds, turn off LEDs for 2 seconds, then resume blinking
+
 
     while (1) {
         // All logic is interrupt-driven — nothing required in main loop

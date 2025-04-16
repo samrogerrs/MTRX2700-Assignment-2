@@ -38,76 +38,7 @@ void timer_init(uint32_t period_ms, void (*callback)(void)) {
     TIM2->CR1 |= TIM_CR1_CEN;     // Start TIM2
 }
 
-// --- Change the period of TIM2 while running ---
-void set_period(uint32_t period_ms) {
-    timer_period = period_ms;
 
-    TIM2->CR1 &= ~TIM_CR1_CEN;    // Stop timer
-    TIM2->CNT = 0;                // Reset count
-    TIM2->ARR = period_ms;        // Update auto-reload register
-    TIM2->EGR = TIM_EGR_UG;       // Latch updated registers
-    TIM2->CR1 |= TIM_CR1_CEN;     // Restart timer
-}
-
-// --- Read the currently configured period (read-only access) ---
-uint32_t get_period(void) {
-    return timer_period;
-}
-
-// --- TIM3: One-shot Timer for Delayed Callback ---
-void start_oneshot(uint32_t delay_ms, void (*callback)(void)) {
-    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;   // Enable TIM3 clock
-
-    TIM3->CR1 = 0;        // Disable before setup
-    TIM3->CNT = 0;
-    TIM3->PSC = 8000 - 1; // 1ms tick
-    TIM3->ARR = delay_ms; // Delay duration in ms
-    TIM3->EGR = TIM_EGR_UG;  // Latch ARR and PSC values
-
-    TIM3->SR = 0;         // Clear any existing update flag
-
-    oneshot_callback = callback;     // Save callback
-
-    TIM3->DIER |= TIM_DIER_UIE;      // Enable update interrupt
-    NVIC_EnableIRQ(TIM3_IRQn);       // Enable in NVIC
-    TIM3->CR1 |= TIM_CR1_CEN;        // Start timer
-}
-
-// --- Pause any general-purpose timer (e.g., TIM2) ---
-void pause_timer(TIM_TypeDef *TIMx) {
-    TIMx->CR1 &= ~TIM_CR1_CEN;  // Clear CEN bit to stop timer
-}
-
-// --- Resume a paused timer ---
-void resume_timer(TIM_TypeDef *TIMx) {
-    TIMx->CR1 |= TIM_CR1_CEN;   // Set CEN bit to resume
-}
-
-// --- Check if a timer is currently paused (i.e., not counting) ---
-bool is_timer_paused(TIM_TypeDef *TIMx) {
-    return (TIMx->CR1 & TIM_CR1_CEN) == 0;
-}
-
-// --- Pause a timer temporarily, then resume it after delay_ms (uses TIM4 internally) ---
-void pause_timer_for(TIM_TypeDef *target_timer, uint32_t delay_ms) {
-    // 1. Pause the timer immediately
-    target_timer->CR1 &= ~TIM_CR1_CEN;
-    paused_timer = target_timer;
-
-    // 2. Setup TIM4 as a one-shot timer
-    RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
-
-    TIM4->CR1 = 0;
-    TIM4->CNT = 0;
-    TIM4->PSC = 8000 - 1;        // 1ms tick
-    TIM4->ARR = delay_ms;        // Delay before resuming
-    TIM4->EGR = TIM_EGR_UG;      // Latch config
-    TIM4->SR = 0;
-
-    TIM4->DIER |= TIM_DIER_UIE;  // Enable interrupt
-    NVIC_EnableIRQ(TIM4_IRQn);   // Enable NVIC
-    TIM4->CR1 |= TIM_CR1_CEN;    // Start TIM4
-}
 
 // --- TIM2 Interrupt Handler: handles periodic blinking ---
 void TIM2_IRQHandler(void) {
@@ -117,32 +48,5 @@ void TIM2_IRQHandler(void) {
         GPIOE->ODR ^= (1 << 15);           // Toggle PE15 for debug pulse
 
         if (timer_callback) timer_callback();  // Call the user’s callback
-    }
-}
-
-// --- TIM3 Interrupt Handler: triggers a one-time callback ---
-void TIM3_IRQHandler(void) {
-    if (TIM3->SR & TIM_SR_UIF) {
-        TIM3->SR &= ~TIM_SR_UIF;
-
-        if (oneshot_callback) oneshot_callback();  // Call user-defined one-shot callback
-
-        TIM3->DIER &= ~TIM_DIER_UIE;   // Disable interrupt
-        TIM3->CR1 &= ~TIM_CR1_CEN;     // Stop the timer
-    }
-}
-
-// --- TIM4 Interrupt Handler: resumes a paused timer ---
-void TIM4_IRQHandler(void) {
-    if (TIM4->SR & TIM_SR_UIF) {
-        TIM4->SR &= ~TIM_SR_UIF;
-
-        if (paused_timer) {
-            paused_timer->CR1 |= TIM_CR1_CEN;   // Resume paused timer
-            paused_timer = 0;                   // Clear pointer
-        }
-
-        TIM4->DIER &= ~TIM_DIER_UIE;   // Disable interrupt
-        TIM4->CR1 &= ~TIM_CR1_CEN;     // Stop TIM4
     }
 }
