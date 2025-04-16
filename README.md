@@ -556,12 +556,16 @@ Overflow: The same double buffer implementation was used as in Exercise 2 - Seri
 Serial input - just \r entered: stores into the buffer and is tansmittted back. That is, it will do a double line space as now there is \r\r\n being transmitted back. 
 
 Timer before Oneshot Input:
+If the timer is called before the one-shot input it works as per instructed. The current led bitmask will start flashing on and off at the input rate (ms). 
 
 Oneshot before Timer Input:
+If the Oneshot is called before the timer, it correctly inverts the current led bitmask after the input delay in ms. i.e if the pre oneshot led bitmask was 10101010, and then oneshot 1000 is typed into the serial input, after 1 second the led bitmask will invert to 010101010. 
 
 Calling oneshot function before LED input has been set:
+Calling the oneshot function before the LED function still inverts the bitmask from 00000000 to 11111111.
 
 Calling timer function before LED input has been set:
+If the led bitmask has not been set (i.e 00000000). The timer will start but just not flash. i.e it will swap between the current bitmask (00000000) and off (00000000) every input time period. The result of this is no visible blinking. If the led bitmask is subsequently set, the blinking will appear.
 
 More than 8 numbers entered for LED call:
 As long as there are no inputs other than 1s and 0s, if the first 8 led string characters are valid the remaining input is discarded (that is, the extra characters). For example, if the input is: "led 111100001111" just the first four LED lights turn on as expected, with the additional 1111 being discarded. 
