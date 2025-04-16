@@ -160,11 +160,11 @@ void SerialOutputString(uint8_t *pt, SerialPort *serial_port) {
 //Receiving completion function to process data
 void finished_receiving(uint8_t num_characters, char *received_string){
 
-	//do tasks here!
+	processing_flag = 0;
 
-	//Transmit completion message after task has finished
-	uint8_t *finished_op = "Finished task. Send new prompt!";
-	start_interrupt_transmission(&USART1_PORT, finished_op, strlen(finished_op));
+	//do tasks here!
+	
+	processing_flag = 1;
 
 }
 
