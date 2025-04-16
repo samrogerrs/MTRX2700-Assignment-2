@@ -230,6 +230,7 @@ void USART1_EXTI25_IRQHandler(void){
 				//Store length of received string
 				uint8_t length = rx_index;
 				rx_index = 0;
+				memset((void *)active_buffer, 0, RX_BUFFER_SIZE);
 
 				//reset flags and send buffer to process
 				processing_flag = 0;
@@ -238,6 +239,7 @@ void USART1_EXTI25_IRQHandler(void){
 			//Discard received string if still processing other buffer
 			else{
 				rx_index = 0;
+				memset((void *)active_buffer, 0, RX_BUFFER_SIZE);
 			}
 		}
 		//Handle buffer overflow - send error message, reset buffer
