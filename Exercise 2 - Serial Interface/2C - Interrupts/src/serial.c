@@ -127,9 +127,10 @@ void finished_receiving(uint8_t num_characters, char *received_string){
 
 	//do tasks here!
 
-	//Transmit completion message after task has finished
-	uint8_t *finished_op = "Finished task. Send new prompt!";
-	SerialOutputString(finished_op, &USART1_PORT);
+	volatile uint32_t test = 0;
+	for (volatile uint32_t i = 0; i < 0x8ffff; i++) {
+		//delay
+	}
 
 }
 
