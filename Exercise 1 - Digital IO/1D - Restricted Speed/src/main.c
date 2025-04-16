@@ -9,6 +9,7 @@
 #include "dio.h"
 
 // handles what happens when button pressed
+// if one half on, do other
 void button_pressed(void)
 {
     uint8_t current_state = dio_get_led_state();
@@ -23,7 +24,8 @@ void button_pressed(void)
     }
 }
 
-
+//the main run loop
+//from here, much of the specific implementation 
 int main(void)
 {
     // set up and assign button pressed function
