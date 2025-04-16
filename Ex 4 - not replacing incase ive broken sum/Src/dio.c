@@ -123,6 +123,7 @@ void dio_set_led_rate(uint32_t rate_ms)
 void dio_start_blinking(void)
 {
     blinking_active = true;
+    blink_mask = dio_get_led_state();
     toggle_flag = false;  // Start from OFF
 }
 
